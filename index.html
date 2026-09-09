@@ -235,11 +235,18 @@
   .stock-name{font-weight:700;}
   .stock-name .rank{color:var(--text-dim);font-weight:500;margin-right:8px;}
 
-  /* ---- Community/Chat view ---- */
-  .chat-layout{
-    display:grid;grid-template-columns:1fr 220px;gap:16px;height:calc(100vh - 230px);min-height:480px;
+  /* ---- Dashboard + Community split layout ---- */
+  .dash-split{
+    display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;
   }
-  @media(max-width:860px){.chat-layout{grid-template-columns:1fr;height:auto;}}
+  @media(max-width:1000px){.dash-split{grid-template-columns:1fr;}}
+  .dash-side{
+    display:flex;flex-direction:column;gap:12px;
+    position:sticky;top:16px;
+    height:calc(100vh - 140px);min-height:420px;
+  }
+  @media(max-width:1000px){.dash-side{position:static;height:560px;}}
+  .dash-side .chat-main{flex:1;min-height:0;}
   .chat-main{
     background:var(--panel);border:1px solid var(--border);border-radius:14px;
     display:flex;flex-direction:column;overflow:hidden;
@@ -323,7 +330,6 @@
     <nav class="tabs">
       <button class="tab-btn active" data-view="dashboard">김프 대시보드</button>
       <button class="tab-btn" data-view="stock">주식시장</button>
-      <button class="tab-btn" data-view="community">커뮤니티</button>
     </nav>
     <div class="header-tools">
       <button class="theme-toggle" id="themeToggle" title="라이트/다크 전환">🌙</button>
@@ -332,8 +338,10 @@
 
   <main>
 
-    <!-- ================= DASHBOARD ================= -->
+    <!-- ================= DASHBOARD (+ 커뮤니티 통합) ================= -->
     <section class="view active" id="view-dashboard">
+    <div class="dash-split">
+    <div class="dash-main">
       <div class="hero">
         <div class="hero-card">
           <div class="label">BTC/KRW · 업비트</div>
@@ -341,10 +349,10 @@
             <div class="hero-price" id="heroUpbit">-</div>
             <span class="badge up" id="heroPremBadge">+0.00%</span>
           </div>
-          <div class="hero-sub" id="heroSub">바이낸스 기준가 대비 김치프리미엄</div>
+          <div class="hero-sub" id="heroSub">글로벌 시세 대비 김치프리미엄</div>
           <div class="hero-grid">
             <div class="mini-stat">
-              <div class="label">바이낸스 (원화환산)</div>
+              <div class="label">글로벌 시세 (원화환산)</div>
               <div class="val" id="heroBinance">-</div>
             </div>
             <div class="mini-stat">
@@ -380,7 +388,7 @@
               <th>코인</th>
               <th></th>
               <th id="colDomestic">업비트(KRW)</th>
-              <th>바이낸스가(원화환산)</th>
+              <th>글로벌시세(원화환산)</th>
               <th>김프</th>
               <th>변동(24h)</th>
             </tr>
@@ -388,30 +396,15 @@
           <tbody id="priceTableBody"></tbody>
         </table>
       </div>
-    </section>
-
-    <!-- ================= STOCK ================= -->
-    <section class="view" id="view-stock">
-      <div class="stock-grid">
-        <div class="stock-panel">
-          <h3>코스피 시가총액 TOP 5</h3>
-          <div id="kospiList"></div>
-        </div>
-        <div class="stock-panel">
-          <h3>코스닥 등락률 TOP 5</h3>
-          <div id="kosdaqList"></div>
-        </div>
       </div>
-    </section>
 
-    <!-- ================= COMMUNITY ================= -->
-    <section class="view" id="view-community">
-      <div class="chat-layout">
+      <!-- ---- 커뮤니티(채팅) : 대시보드 옆에 항상 표시 ---- -->
+      <div class="dash-side">
         <div class="chat-main">
           <div class="chat-toolbar">
-            <button class="tool-btn" id="btnAlarm">🔔 알람 ON</button>
-            <button class="tool-btn" id="btnBadge">🏷️ 칭호 선택</button>
-            <button class="tool-btn danger" id="btnClear">🧹 방청소</button>
+            <button class="tool-btn" id="btnAlarm">🔔 알람</button>
+            <button class="tool-btn" id="btnBadge">🏷️ 칭호</button>
+            <button class="tool-btn danger" id="btnClear">🧹 청소</button>
             <button class="tool-btn danger" id="btnReset">♻️ 초기화</button>
           </div>
           <div class="chat-messages" id="chatMessages"></div>
@@ -435,6 +428,21 @@
             <h4>접속자 (시뮬레이션)</h4>
             <div class="online-list" id="onlineList"></div>
           </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <!-- ================= STOCK ================= -->
+    <section class="view" id="view-stock">
+      <div class="stock-grid">
+        <div class="stock-panel">
+          <h3>코스피 시가총액 TOP 5</h3>
+          <div id="kospiList"></div>
+        </div>
+        <div class="stock-panel">
+          <h3>코스닥 등락률 TOP 5</h3>
+          <div id="kosdaqList"></div>
         </div>
       </div>
     </section>
@@ -503,22 +511,30 @@ function initPrices(){
   }
 }
 
+let liveStatus = 'connecting';
 async function tryLiveFetch(){
   try{
     const res = await fetch('/api/prices');
-    if(!res.ok) throw new Error('bad status');
+    if(!res.ok) throw new Error('bad status ' + res.status);
     const data = await res.json();
     if(data && data.fx) state.fx = data.fx;
+    let gotAny = false;
     if(data && data.coins){
       for(const t in data.coins){
         if(state.prices[t]){
-          state.prices[t].domestic = data.coins[t].domestic ?? state.prices[t].domestic;
-          state.prices[t].binanceUsd = data.coins[t].binanceUsd ?? state.prices[t].binanceUsd;
+          if(data.coins[t].domestic != null){ state.prices[t].domestic = data.coins[t].domestic; gotAny = true; }
+          if(data.coins[t].binanceUsd != null){ state.prices[t].binanceUsd = data.coins[t].binanceUsd; gotAny = true; }
         }
       }
     }
+    liveStatus = gotAny ? 'live' : 'simulated';
+    if(data && data.debug && (data.debug.upbitError || data.debug.globalError)){
+      console.warn('가격 API 부분 오류:', data.debug);
+    }
+    if(!gotAny) simulateDrift();
   }catch(e){
-    // live proxy not available (e.g. static hosting) -> keep simulated drift
+    console.warn('가격 API 연결 실패, 시뮬레이션으로 대체:', e);
+    liveStatus = 'simulated';
     simulateDrift();
   }
 }
@@ -595,7 +611,8 @@ function renderAll(){
   renderHero();
   renderSummary();
   renderTable();
-  document.getElementById('lastUpdated').textContent = '업데이트: ' + new Date().toLocaleTimeString('ko-KR');
+  const statusLabel = liveStatus==='live' ? '실시간 연동' : (liveStatus==='simulated' ? '시뮬레이션 모드' : '연결중');
+  document.getElementById('lastUpdated').textContent = '[' + statusLabel + '] 업데이트: ' + new Date().toLocaleTimeString('ko-KR');
 }
 
 // -------- tabs --------
