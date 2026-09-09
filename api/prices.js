@@ -1,40 +1,53 @@
 // /api/prices
-// Vercel Serverless Function: 업비트/바이낸스 시세 + 환율을 서버에서 대신 받아와
-// 브라우저의 CORS 문제 없이 프론트엔드에 전달하는 프록시입니다.
+// Vercel Serverless Function
+// 업비트(국내가) + CoinGecko(글로벌 시세, USD) + 환율을 가져와
+// 브라우저의 CORS/지역차단 문제 없이 프론트엔드에 전달하는 프록시입니다.
+// (바이낸스 공개 API는 서버 실행 지역에 따라 접속이 차단될 수 있어 CoinGecko로 대체)
 
-const COINS = [
-  'BTC','ETH','XRP','SOL','DOGE','ADA','TRX','AVAX','DOT','LINK',
-  'MATIC','SHIB','LTC','BCH','ATOM','UNI','ETC','NEAR','APT','ARB','SUI','SEI'
-];
+const COIN_MAP = {
+  BTC:'bitcoin', ETH:'ethereum', XRP:'ripple', SOL:'solana', DOGE:'dogecoin',
+  ADA:'cardano', TRX:'tron', AVAX:'avalanche-2', DOT:'polkadot', LINK:'chainlink',
+  MATIC:'matic-network', SHIB:'shiba-inu', LTC:'litecoin', BCH:'bitcoin-cash',
+  ATOM:'cosmos', UNI:'uniswap', ETC:'ethereum-classic', NEAR:'near',
+  APT:'aptos', ARB:'arbitrum', SUI:'sui', SEI:'sei-network'
+};
+const COINS = Object.keys(COIN_MAP);
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=15');
 
-  try {
-    const [upbitData, binanceData, fx] = await Promise.all([
-      fetchUpbit(),
-      fetchBinance(),
-      fetchFx()
-    ]);
+  const [upbitData, globalData, fx] = await Promise.all([
+    fetchUpbit().catch(e => ({ __error: String(e) })),
+    fetchGlobal().catch(e => ({ __error: String(e) })),
+    fetchFx().catch(() => 1380)
+  ]);
 
-    const coins = {};
-    for (const t of COINS) {
-      coins[t] = {
-        domestic: upbitData[t] ?? null,
-        binanceUsd: binanceData[t] ?? null
-      };
-    }
-
-    res.status(200).json({ fx, coins, updatedAt: Date.now() });
-  } catch (err) {
-    res.status(200).json({ error: String(err), fx: null, coins: {} });
+  const coins = {};
+  for (const t of COINS) {
+    coins[t] = {
+      domestic: (upbitData && !upbitData.__error) ? (upbitData[t] ?? null) : null,
+      binanceUsd: (globalData && !globalData.__error) ? (globalData[t] ?? null) : null
+    };
   }
+
+  res.status(200).json({
+    fx,
+    coins,
+    updatedAt: Date.now(),
+    debug: {
+      upbitError: upbitData && upbitData.__error ? upbitData.__error : null,
+      globalError: globalData && globalData.__error ? globalData.__error : null
+    }
+  });
 }
 
 async function fetchUpbit() {
   const markets = COINS.map(t => `KRW-${t}`).join(',');
-  const r = await fetch(`https://api.upbit.com/v1/ticker?markets=${markets}`);
+  const r = await fetch(`https://api.upbit.com/v1/ticker?markets=${markets}`, {
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!r.ok) throw new Error('upbit status ' + r.status);
   const data = await r.json();
   const out = {};
   for (const item of data) {
@@ -44,15 +57,18 @@ async function fetchUpbit() {
   return out;
 }
 
-async function fetchBinance() {
-  const r = await fetch('https://api.binance.com/api/v3/ticker/price');
+async function fetchGlobal() {
+  const ids = Object.values(COIN_MAP).join(',');
+  const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`, {
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!r.ok) throw new Error('coingecko status ' + r.status);
   const data = await r.json();
-  const wanted = new Set(COINS.map(t => `${t}USDT`));
   const out = {};
-  for (const item of data) {
-    if (wanted.has(item.symbol)) {
-      const t = item.symbol.replace('USDT', '');
-      out[t] = parseFloat(item.price);
+  for (const t of COINS) {
+    const id = COIN_MAP[t];
+    if (data[id] && typeof data[id].usd === 'number') {
+      out[t] = data[id].usd;
     }
   }
   return out;
