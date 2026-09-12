@@ -1,9 +1,10 @@
 {
-  "version": 2,
-  "functions": {
-    "api/prices.js": {
-      "memory": 128,
-      "maxDuration": 10
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["icn1"],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
     }
-  }
+  ]
 }
