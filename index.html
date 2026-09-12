@@ -60,8 +60,19 @@ nav.tabs button[aria-selected="true"]{background:var(--card);color:var(--text);b
 /* ── 레퍼럴 레일 ───────────────────────── */
 .rail{border-bottom:1px solid var(--line);background:
   linear-gradient(180deg,color-mix(in srgb,var(--amber) 7%,transparent),transparent)}
-.rail-in{display:flex;gap:10px;padding:14px 0;overflow-x:auto;scrollbar-width:none}
+.rail-outer{position:relative;display:flex;align-items:center}
+.rail-in{display:flex;gap:10px;padding:14px 0;overflow-x:auto;scrollbar-width:none;
+  flex:1;min-width:0;scroll-behavior:smooth}
 .rail-in::-webkit-scrollbar{display:none}
+.rail-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;
+  width:34px;height:34px;border-radius:50%;cursor:pointer;
+  background:var(--card);border:1px solid var(--line);color:var(--text);
+  font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.28)}
+.rail-nav.prev{left:-6px}
+.rail-nav.next{right:-6px}
+.rail-nav:disabled{opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.rail-in{scroll-behavior:auto}}
 .rail-lead{flex:0 0 auto;max-width:200px;padding-right:6px}
 .rail-lead b{display:block;font-size:14.5px;letter-spacing:-.02em}
 .rail-lead span{font-size:12.5px;color:var(--muted)}
@@ -157,7 +168,10 @@ tbody tr:last-child td{border-bottom:0}
 .stock-list li:last-child{border-bottom:0}
 .stock-list .rank{font-family:var(--mono);font-size:12px;color:var(--dim);width:18px}
 .stock-list .nm{font-weight:600;font-size:14px}
-.stock-list .val{margin-left:auto;color:var(--dim);font-family:var(--mono);font-size:13px}
+.stock-list .val{margin-left:auto;color:var(--text);font-family:var(--mono);font-size:13px;
+  text-align:right;font-variant-numeric:tabular-nums}
+.stock-list .val b{display:block;font-size:12px;font-weight:600}
+.stock-list .empty{display:block;padding:28px 16px;text-align:center;color:var(--muted);font-size:13px}
 .wip{margin:0;padding:14px 16px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line);
   background:color-mix(in srgb,var(--amber) 8%,transparent)}
 [hidden]{display:none !important}
@@ -201,11 +215,15 @@ footer p{margin:0 0 6px}
 </header>
 
 <div class="rail">
-  <div class="wrap rail-in" id="refRail">
-    <div class="rail-lead">
-      <b>거래소 수수료 20% payback</b>
-      <span>아래 코드로 가입하면 거래 수수료의 20%를 돌려받습니다.</span>
+  <div class="wrap rail-outer">
+    <button class="rail-nav prev" id="railPrev" type="button" aria-label="이전 거래소 보기" disabled>‹</button>
+    <div class="rail-in" id="refRail">
+      <div class="rail-lead">
+        <b>거래소 수수료 20% payback</b>
+        <span>아래 코드로 가입하면 거래 수수료의 20%를 돌려받습니다.</span>
+      </div>
     </div>
+    <button class="rail-nav next" id="railNext" type="button" aria-label="다음 거래소 보기">›</button>
   </div>
 </div>
 
@@ -293,26 +311,18 @@ footer p{margin:0 0 6px}
   <section id="view-stock" role="tabpanel" aria-labelledby="tab-stock" hidden>
     <div class="stock-grid">
       <section class="panel">
-        <div class="panel-head"><h2>코스피 시가총액 상위</h2></div>
-        <p class="wip">시세 연동 대기 중입니다. 국내 주식은 무료 실시간 API가 없어 한국투자증권 등 증권사 오픈API 키를 연결해야 숫자가 표시됩니다.</p>
-        <ol class="stock-list">
-          <li><span class="rank">1</span><span class="nm">삼성전자</span><span class="val">—</span></li>
-          <li><span class="rank">2</span><span class="nm">SK하이닉스</span><span class="val">—</span></li>
-          <li><span class="rank">3</span><span class="nm">LG에너지솔루션</span><span class="val">—</span></li>
-          <li><span class="rank">4</span><span class="nm">삼성바이오로직스</span><span class="val">—</span></li>
-          <li><span class="rank">5</span><span class="nm">현대차</span><span class="val">—</span></li>
-        </ol>
+        <div class="panel-head">
+          <h2>코스피 주요 종목</h2>
+          <span class="hint" id="kospiHint">불러오는 중</span>
+        </div>
+        <ol class="stock-list" id="kospiList"></ol>
       </section>
       <section class="panel">
-        <div class="panel-head"><h2>코스닥 시가총액 상위</h2></div>
-        <p class="wip">위와 같은 연동이 필요합니다. 연결 방법은 README에 정리해 두었습니다.</p>
-        <ol class="stock-list">
-          <li><span class="rank">1</span><span class="nm">알테오젠</span><span class="val">—</span></li>
-          <li><span class="rank">2</span><span class="nm">에코프로비엠</span><span class="val">—</span></li>
-          <li><span class="rank">3</span><span class="nm">에코프로</span><span class="val">—</span></li>
-          <li><span class="rank">4</span><span class="nm">HLB</span><span class="val">—</span></li>
-          <li><span class="rank">5</span><span class="nm">리가켐바이오</span><span class="val">—</span></li>
-        </ol>
+        <div class="panel-head">
+          <h2>코스닥 주요 종목</h2>
+          <span class="hint" id="kosdaqHint">불러오는 중</span>
+        </div>
+        <ol class="stock-list" id="kosdaqList"></ol>
       </section>
     </div>
   </section>
@@ -349,6 +359,23 @@ REFS.forEach(r => {
     <a class="join" href="${r.url}" target="_blank" rel="noopener nofollow">코드 받고 가입</a>`;
   rail.appendChild(el);
 });
+const railPrev = document.getElementById('railPrev');
+const railNext = document.getElementById('railNext');
+
+function syncRailNav() {
+  const max = rail.scrollWidth - rail.clientWidth;
+  railPrev.disabled = rail.scrollLeft <= 4;
+  railNext.disabled = rail.scrollLeft >= max - 4;
+}
+function nudgeRail(dir) {
+  rail.scrollBy({ left: dir * Math.max(240, rail.clientWidth * 0.7), behavior: 'smooth' });
+}
+railPrev.addEventListener('click', () => nudgeRail(-1));
+railNext.addEventListener('click', () => nudgeRail(1));
+rail.addEventListener('scroll', syncRailNav, { passive: true });
+window.addEventListener('resize', syncRailNav);
+syncRailNav();
+
 rail.addEventListener('click', e => {
   const btn = e.target.closest('.copy');
   if (!btn) return;
@@ -596,6 +623,41 @@ document.getElementById('btnScroll').addEventListener('click', e => {
   e.currentTarget.textContent = autoScroll ? '⬇ 자동 따라가기' : '⏸ 위치 고정';
   if (autoScroll) log.scrollTop = log.scrollHeight;
 });
+
+/* ════ 주식시장 ════════════════════════ */
+const stockPrice = n => n == null ? '—' : Math.round(n).toLocaleString('ko-KR') + '원';
+
+function renderStocks(listEl, hintEl, rows) {
+  if (!rows.length) {
+    listEl.innerHTML = '<li class="empty">시세를 불러오지 못했습니다. 잠시 후 다시 시도합니다.</li>';
+    hintEl.textContent = '연결 안 됨';
+    return;
+  }
+  listEl.innerHTML = rows.map((s, i) => `
+    <li>
+      <span class="rank">${i + 1}</span>
+      <span class="nm">${escapeHtml(s.name)}</span>
+      <span class="val">${stockPrice(s.price)}
+        <b class="${cls(s.change)}">${pct(s.change)}</b></span>
+    </li>`).join('');
+  hintEl.textContent = '장중 시세';
+}
+
+async function loadStocks() {
+  const kospiList = document.getElementById('kospiList');
+  const kosdaqList = document.getElementById('kosdaqList');
+  try {
+    const r = await fetch(`/api/stocks?t=${Date.now()}`);
+    const d = await r.json();
+    renderStocks(kospiList, document.getElementById('kospiHint'), d.kospi || []);
+    renderStocks(kosdaqList, document.getElementById('kosdaqHint'), d.kosdaq || []);
+  } catch (_) {
+    renderStocks(kospiList, document.getElementById('kospiHint'), []);
+    renderStocks(kosdaqList, document.getElementById('kosdaqHint'), []);
+  }
+}
+loadStocks();
+setInterval(loadStocks, 60000);
 
 /* ════ 알림봇 1 — 비트코인 급등·급락 ════════ */
 // 시뮬레이션이 아니라 실제로 받아온 가격 변화만 알린다.
