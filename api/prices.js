@@ -61,8 +61,31 @@ async function getJSON(url, ms = 6000) {
 
 /* ---------- 국내 거래소 ---------- */
 
+// 업비트는 없는 마켓 코드가 하나라도 섞이면 요청 전체를 404로 거절한다.
+// 그래서 먼저 실제 원화마켓 목록을 받아 교집합만 조회한다. (상장·폐지에 자동 대응)
+let upbitMarketCache = { at: 0, set: null };
+
+async function upbitKrwMarkets() {
+  if (upbitMarketCache.set && Date.now() - upbitMarketCache.at < 10 * 60e3) {
+    return upbitMarketCache.set;
+  }
+  const rows = await getJSON('https://api.upbit.com/v1/market/all?isDetails=false');
+  const set = new Set(
+    rows
+      .map((r) => String(r.market))
+      .filter((m) => m.startsWith('KRW-'))
+      .map((m) => m.replace('KRW-', ''))
+  );
+  upbitMarketCache = { at: Date.now(), set };
+  return set;
+}
+
 async function fetchUpbit() {
-  const markets = [...SYMBOLS.map((s) => `KRW-${s}`), 'KRW-USDT'].join(',');
+  const available = await upbitKrwMarkets();
+  const wanted = [...SYMBOLS, 'USDT'].filter((s) => available.has(s));
+  if (!wanted.length) throw new Error('업비트 원화마켓에 해당 코인이 없습니다');
+
+  const markets = wanted.map((s) => `KRW-${s}`).join(',');
   const rows = await getJSON(`https://api.upbit.com/v1/ticker?markets=${markets}`);
   const out = {};
   for (const row of rows) {
@@ -154,14 +177,16 @@ module.exports = async (req, res) => {
   // 김프 계산에는 국내가 + 해외가 + 환율이 모두 필요하다.
   const canComputePremium = Boolean(domestic && binance && fx);
 
+  // 해외 시세나 환율이 빠져도 국내 가격은 보여준다. 김프 칸만 비워 둔다.
   const coins = [];
-  if (domestic && binance) {
+  if (domestic) {
     for (const sym of SYMBOLS) {
       const d = domestic[sym];
-      const b = binance[sym];
-      if (!d || !b || !(d.price > 0) || !(b.price > 0)) continue;
+      if (!d || !(d.price > 0)) continue;
 
-      const globalKrw = fx ? b.price * fx.rate : null;
+      const b = binance && binance[sym];
+      const hasGlobal = Boolean(b && b.price > 0);
+      const globalKrw = hasGlobal && fx ? b.price * fx.rate : null;
       const premium = globalKrw ? (d.price / globalKrw - 1) * 100 : null;
 
       coins.push({
@@ -169,7 +194,7 @@ module.exports = async (req, res) => {
         name: NAME_BY_SYMBOL[sym] || sym,
         krw: d.price,
         change24h: Number.isFinite(d.change24h) ? d.change24h : null,
-        usdt: b.price,
+        usdt: hasGlobal ? b.price : null,
         globalKrw,
         premium,
       });
