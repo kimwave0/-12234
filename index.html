@@ -1,796 +1,661 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>김프리즘 Kimprism — 실시간 김치프리미엄</title>
-<meta name="description" content="실시간 김치프리미엄 계산과 코인 커뮤니티, 김프리즘(Kimprism)">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>김프리즘 — 실시간 김치프리미엄</title>
+<meta name="description" content="업비트·빗썸과 바이낸스 시세를 실시간 환율로 환산해 코인별 김치프리미엄을 보여주는 대시보드. 커뮤니티 채팅과 청산 알림 포함.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0a0e14;
-    --panel:#10151d;
-    --panel-2:#151b25;
-    --border:#212938;
-    --text:#dbe4ee;
-    --text-dim:#7c8a9c;
-    --up:#3ddc84;
-    --down:#ff5c6c;
-    --brand:#22d3ee;
-    --brand-2:#7c5cff;
-    --warn:#ffb84d;
-  }
-  [data-theme="light"]{
-    --bg:#f3f5f8;
-    --panel:#ffffff;
-    --panel-2:#eef1f5;
-    --border:#dfe4ea;
-    --text:#101826;
-    --text-dim:#5b6676;
-    --up:#12a35a;
-    --down:#e0334a;
-    --brand:#0891a8;
-    --brand-2:#5a3fd6;
-    --warn:#b3760a;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:'JetBrains Mono','D2Coding','Consolas',ui-monospace,monospace;
-    font-size:14px;
-    line-height:1.5;
-    transition:background .2s,color .2s;
-    min-height:100vh;
-  }
-  a{color:inherit;}
-  ::selection{background:var(--brand);color:#00131a;}
+:root{
+  --ink:#0E1624; --surface:#15203150; --card:#16212F; --line:#26364C;
+  --text:#E7EDF6; --muted:#8B9DB8; --dim:#5E7391;
+  --rise:#F2545B; --fall:#3E8BFF; --amber:#FFB23F; --teal:#3ED6C0;
+  --radius:14px;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --sans:"Pretendard Variable",Pretendard,system-ui,-apple-system,sans-serif;
+}
+html[data-theme="light"]{
+  --ink:#F7F8FB; --surface:#FFFFFF; --card:#FFFFFF; --line:#DFE5EF;
+  --text:#16202F; --muted:#5B6B83; --dim:#8493A8;
+  --rise:#D92B38; --fall:#1163D6; --amber:#B86E00; --teal:#0E8C7C;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ink); color:var(--text); font-family:var(--sans);
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.wrap{max-width:1240px;margin:0 auto;padding:0 18px}
 
-  /* ---- Top referral banner ---- */
-  .banner{
-    background:linear-gradient(90deg,var(--brand-2),var(--brand));
-    color:#04121a;
-    padding:10px 16px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:14px;
-    flex-wrap:wrap;
-    font-weight:700;
-    font-size:13px;
-    text-align:center;
-  }
-  .banner .code{
-    background:rgba(4,18,26,.18);
-    padding:2px 8px;
-    border-radius:4px;
-    letter-spacing:.5px;
-  }
-  .banner .cta{
-    background:#04121a;
-    color:#eafcff;
-    padding:6px 14px;
-    border-radius:6px;
-    text-decoration:none;
-    font-weight:700;
-    white-space:nowrap;
-  }
-  .banner .cta:hover{opacity:.85;}
+/* ── 상단 바 ───────────────────────────── */
+.top{position:sticky;top:0;z-index:40;background:var(--ink);border-bottom:1px solid var(--line)}
+.top-in{display:flex;align-items:center;gap:18px;height:60px}
+.brand{display:flex;align-items:baseline;gap:10px;font-weight:700;font-size:19px;letter-spacing:-.02em;text-decoration:none}
+.brand em{font-style:normal;font-size:11px;color:var(--dim);font-weight:500;letter-spacing:.06em}
+.spectrum{display:block;height:3px;width:100%;border-radius:2px;
+  background:linear-gradient(90deg,#F2545B,#FFB23F,#3ED6C0,#3E8BFF,#9B7BFF)}
+.brand-mark{display:flex;flex-direction:column;gap:4px}
+nav.tabs{display:flex;gap:4px;margin-left:8px}
+nav.tabs button{background:none;border:0;padding:8px 12px;border-radius:9px;color:var(--muted);cursor:pointer;font-weight:600}
+nav.tabs button[aria-selected="true"]{background:var(--card);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:none;border:0;padding:7px 13px;cursor:pointer;color:var(--muted);font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--amber);color:#1A1206}
+.icon-btn{background:var(--card);border:1px solid var(--line);border-radius:10px;width:38px;height:36px;cursor:pointer;line-height:1}
+.pulse{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);padding-left:4px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.dot.live{background:var(--teal);box-shadow:0 0 0 4px color-mix(in srgb,var(--teal) 18%,transparent)}
+.dot.down{background:var(--rise)}
 
-  /* ---- Header ---- */
-  header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:16px 24px;
-    border-bottom:1px solid var(--border);
-    flex-wrap:wrap;
-    gap:12px;
-  }
-  .logo{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    font-size:20px;
-    font-weight:800;
-    letter-spacing:-.5px;
-  }
-  .logo .dot{
-    width:9px;height:9px;border-radius:50%;
-    background:var(--up);
-    box-shadow:0 0 8px var(--up);
-    animation:pulse 1.6s infinite;
-  }
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
-  .logo small{color:var(--text-dim);font-weight:500;font-size:11px;}
+/* ── 레퍼럴 레일 ───────────────────────── */
+.rail{border-bottom:1px solid var(--line);background:
+  linear-gradient(180deg,color-mix(in srgb,var(--amber) 7%,transparent),transparent)}
+.rail-in{display:flex;gap:10px;padding:14px 0;overflow-x:auto;scrollbar-width:none}
+.rail-in::-webkit-scrollbar{display:none}
+.rail-lead{flex:0 0 auto;max-width:200px;padding-right:6px}
+.rail-lead b{display:block;font-size:14.5px;letter-spacing:-.02em}
+.rail-lead span{font-size:12.5px;color:var(--muted)}
+.ref{flex:0 0 auto;display:flex;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.ref-name{font-weight:700;font-size:14px;letter-spacing:-.01em}
+.ref-pay{font-size:11.5px;color:var(--amber)}
+.ref-code{display:flex;align-items:center;gap:6px}
+.ref-code code{font-family:var(--mono);font-size:12.5px;background:var(--ink);
+  border:1px dashed var(--line);border-radius:7px;padding:4px 8px;color:var(--text)}
+.copy{background:none;border:0;cursor:pointer;color:var(--muted);font-size:12px;padding:4px 6px;border-radius:6px}
+.copy:hover{color:var(--text)}
+.join{text-decoration:none;background:var(--amber);color:#1A1206;font-weight:700;font-size:13px;
+  padding:7px 13px;border-radius:9px;white-space:nowrap}
 
-  nav.tabs{
-    display:flex;
-    gap:4px;
-    background:var(--panel);
-    padding:4px;
-    border-radius:10px;
-    border:1px solid var(--border);
-  }
-  nav.tabs button{
-    background:transparent;
-    border:none;
-    color:var(--text-dim);
-    padding:8px 16px;
-    border-radius:7px;
-    font-family:inherit;
-    font-size:13px;
-    font-weight:700;
-    cursor:pointer;
-  }
-  nav.tabs button.active{
-    background:var(--brand);
-    color:#04121a;
-  }
+/* ── 히어로 ───────────────────────────── */
+.hero{display:grid;grid-template-columns:minmax(280px,1.3fr) repeat(3,minmax(130px,1fr));
+  gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);
+  margin:18px 0;overflow:hidden}
+.hero > div{background:var(--card);padding:18px 20px}
+.hero .k{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.hero .big{font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.hero .v{font-size:21px;font-weight:600;letter-spacing:-.02em}
+.hero .sub{font-size:12.5px;color:var(--dim);margin-top:6px}
+.rise{color:var(--rise)} .fall{color:var(--fall)}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:6px}
+.tag.kim{background:color-mix(in srgb,var(--rise) 16%,transparent);color:var(--rise)}
+.tag.rev{background:color-mix(in srgb,var(--fall) 16%,transparent);color:var(--fall)}
 
-  .header-tools{display:flex;align-items:center;gap:10px;}
-  .theme-toggle{
-    background:var(--panel);
-    border:1px solid var(--border);
-    color:var(--text);
-    width:36px;height:36px;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:16px;
-  }
+/* ── 알림 배너 ───────────────────────── */
+.notice{display:none;gap:10px;align-items:flex-start;margin:0 0 18px;padding:13px 16px;
+  border:1px solid color-mix(in srgb,var(--rise) 45%,var(--line));border-radius:var(--radius);
+  background:color-mix(in srgb,var(--rise) 9%,transparent);font-size:13.5px}
+.notice.show{display:flex}
+.notice b{display:block;margin-bottom:2px}
+.notice code{font-family:var(--mono);font-size:12px;color:var(--muted)}
 
-  main{padding:20px 24px 60px;max-width:1320px;margin:0 auto;}
-  .view{display:none;}
-  .view.active{display:block;}
+/* ── 본문 레이아웃 ─────────────────────── */
+.grid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(320px,1fr);gap:18px;align-items:start;padding-bottom:40px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.panel-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.panel-head h2{margin:0;font-size:15px;letter-spacing:-.02em}
+.panel-head .hint{font-size:12px;color:var(--dim);margin-left:auto}
 
-  /* ---- Hero ---- */
-  .hero{
-    display:grid;
-    grid-template-columns:1.1fr .9fr;
-    gap:16px;
-    margin-bottom:20px;
-  }
-  @media(max-width:860px){.hero{grid-template-columns:1fr;}}
-  .hero-card{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:14px;
-    padding:22px 24px;
-  }
-  .hero-card .label{color:var(--text-dim);font-size:12px;margin-bottom:8px;}
-  .hero-price-row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
-  .hero-price{font-size:38px;font-weight:800;letter-spacing:-1px;}
-  .hero-sub{color:var(--text-dim);font-size:13px;}
-  .badge{
-    display:inline-flex;align-items:center;gap:6px;
-    padding:4px 10px;border-radius:20px;font-size:13px;font-weight:800;
-  }
-  .badge.up{background:rgba(61,220,132,.12);color:var(--up);}
-  .badge.down{background:rgba(255,92,108,.12);color:var(--down);}
-  .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
-  .mini-stat{
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:12px 14px;
-  }
-  .mini-stat .label{color:var(--text-dim);font-size:11px;}
-  .mini-stat .val{font-size:16px;font-weight:700;margin-top:4px;}
+/* ── 시세 테이블 ───────────────────────── */
+table{width:100%;border-collapse:collapse}
+thead th{font-size:12px;color:var(--muted);font-weight:600;text-align:right;padding:10px 16px;
+  border-bottom:1px solid var(--line);position:sticky;top:60px;background:var(--card);z-index:5}
+thead th:first-child{text-align:left}
+tbody td{padding:12px 16px;text-align:right;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+tbody td:first-child{text-align:left}
+tbody tr:last-child td{border-bottom:0}
+.coin{display:flex;align-items:center;gap:10px}
+.coin .sym{font-weight:700;font-size:14px}
+.coin .nm{font-size:12px;color:var(--dim)}
+.tether-row td{background:color-mix(in srgb,var(--teal) 8%,transparent)}
+.px{font-size:14.5px;font-weight:600}
+.gx{font-size:14px;color:var(--muted)}
+.pm{font-size:15px;font-weight:700}
+.flash-up{animation:fu .7s ease-out}
+.flash-down{animation:fd .7s ease-out}
+@keyframes fu{from{background:color-mix(in srgb,var(--rise) 22%,transparent)}to{background:transparent}}
+@keyframes fd{from{background:color-mix(in srgb,var(--fall) 22%,transparent)}to{background:transparent}}
+.empty{padding:44px 20px;text-align:center;color:var(--muted);font-size:13.5px}
 
-  /* ---- Controls above table ---- */
-  .controls{
-    display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;
-  }
-  .seg{
-    display:flex;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:3px;
-  }
-  .seg button{
-    background:transparent;border:none;color:var(--text-dim);
-    padding:6px 14px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
-  }
-  .seg button.active{background:var(--brand-2);color:#fff;}
-  .search{
-    background:var(--panel);border:1px solid var(--border);border-radius:9px;
-    padding:7px 12px;color:var(--text);font-family:inherit;font-size:12px;flex:1;min-width:160px;
-  }
-  .updated{color:var(--text-dim);font-size:11px;margin-left:auto;}
+/* ── 채팅 ─────────────────────────────── */
+.chat{display:flex;flex-direction:column;height:clamp(520px,74vh,780px)}
+.chat-tools{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.chip{background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px;
+  font-size:12.5px;cursor:pointer;color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+.chip:hover{color:var(--text)}
+.log{flex:1;overflow-y:auto;padding:14px 14px 6px;display:flex;flex-direction:column;gap:11px}
+.msg{font-size:13.5px}
+.msg .meta{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.msg .nick{font-weight:700;font-size:12.5px}
+.msg .badge{font-size:10.5px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber);font-weight:700}
+.msg .time{font-size:11px;color:var(--dim);font-family:var(--mono)}
+.msg .body{color:var(--text);word-break:break-word;white-space:pre-wrap}
+.bot{border-left:2px solid var(--amber);padding-left:10px}
+.bot.whale{border-left-color:var(--teal)}
+.bot .body{color:var(--muted)}
+.chat-form{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+.chat-form input[type=text]{flex:1;min-width:0;background:var(--ink);border:1px solid var(--line);
+  border-radius:10px;padding:10px 12px}
+.chat-form .nick-in{flex:0 0 92px}
+.send{background:var(--text);color:var(--ink);border:0;border-radius:10px;padding:10px 15px;font-weight:700;cursor:pointer}
 
-  /* ---- Table ---- */
-  .table-wrap{
-    background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;
-  }
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  thead th{
-    text-align:right;padding:12px 14px;color:var(--text-dim);font-weight:700;
-    border-bottom:1px solid var(--border);font-size:11px;
-  }
-  thead th:first-child,thead th:nth-child(2){text-align:left;}
-  tbody td{padding:11px 14px;text-align:right;border-bottom:1px solid var(--border);}
-  tbody tr:last-child td{border-bottom:none;}
-  tbody tr:hover{background:var(--panel-2);}
-  td:first-child,td:nth-child(2){text-align:left;}
-  .coin-name{display:flex;align-items:center;gap:8px;font-weight:700;}
-  .coin-icon{
-    width:22px;height:22px;border-radius:50%;
-    background:var(--panel-2);display:flex;align-items:center;justify-content:center;
-    font-size:10px;font-weight:800;color:var(--brand);border:1px solid var(--border);
-  }
-  .ticker{color:var(--text-dim);font-size:11px;}
-  .prem-pos{color:var(--up);font-weight:800;}
-  .prem-neg{color:var(--down);font-weight:800;}
-  .chg-pos{color:var(--up);}
-  .chg-neg{color:var(--down);}
-  .usd-sub{color:var(--text-dim);font-size:11px;display:block;margin-top:2px;}
+/* ── 주식 탭 ─────────────────────────── */
+.stock-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;padding-bottom:40px}
+.stock-list{list-style:none;margin:0;padding:0}
+.stock-list li{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+.stock-list li:last-child{border-bottom:0}
+.stock-list .rank{font-family:var(--mono);font-size:12px;color:var(--dim);width:18px}
+.stock-list .nm{font-weight:600;font-size:14px}
+.stock-list .val{margin-left:auto;color:var(--dim);font-family:var(--mono);font-size:13px}
+.wip{margin:0;padding:14px 16px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line);
+  background:color-mix(in srgb,var(--amber) 8%,transparent)}
+[hidden]{display:none !important}
+footer{border-top:1px solid var(--line);padding:22px 0 46px;font-size:12.5px;color:var(--dim)}
+footer p{margin:0 0 6px}
 
-  /* ---- Stock view ---- */
-  .stock-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-  @media(max-width:860px){.stock-grid{grid-template-columns:1fr;}}
-  .stock-panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 20px;}
-  .stock-panel h3{margin:0 0 12px;font-size:14px;letter-spacing:.5px;}
-  .stock-row{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:10px 0;border-bottom:1px solid var(--border);
-  }
-  .stock-row:last-child{border-bottom:none;}
-  .stock-name{font-weight:700;}
-  .stock-name .rank{color:var(--text-dim);font-weight:500;margin-right:8px;}
-
-  /* ---- Dashboard + Community split layout ---- */
-  .dash-split{
-    display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;
-  }
-  @media(max-width:1000px){.dash-split{grid-template-columns:1fr;}}
-  .dash-side{
-    display:flex;flex-direction:column;gap:12px;
-    position:sticky;top:16px;
-    height:calc(100vh - 140px);min-height:420px;
-  }
-  @media(max-width:1000px){.dash-side{position:static;height:560px;}}
-  .dash-side .chat-main{flex:1;min-height:0;}
-  .chat-main{
-    background:var(--panel);border:1px solid var(--border);border-radius:14px;
-    display:flex;flex-direction:column;overflow:hidden;
-  }
-  .chat-toolbar{
-    display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap;
-  }
-  .tool-btn{
-    background:var(--panel-2);border:1px solid var(--border);color:var(--text);
-    padding:6px 10px;border-radius:7px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:700;
-    display:flex;align-items:center;gap:5px;
-  }
-  .tool-btn:hover{border-color:var(--brand);}
-  .tool-btn.danger:hover{border-color:var(--down);color:var(--down);}
-  .chat-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
-  .msg{display:flex;gap:10px;align-items:flex-start;}
-  .msg .avatar{
-    width:30px;height:30px;border-radius:8px;flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;
-    background:var(--panel-2);border:1px solid var(--border);
-  }
-  .msg .name{font-weight:700;font-size:12px;}
-  .msg .name .title{
-    font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-right:6px;
-    background:rgba(124,92,255,.15);color:var(--brand-2);
-  }
-  .msg .time{color:var(--text-dim);font-size:10px;margin-left:6px;}
-  .msg .body{font-size:13px;margin-top:2px;}
-  .msg.bot .avatar{background:rgba(255,184,77,.15);border-color:var(--warn);color:var(--warn);}
-  .msg.bot .body{color:var(--warn);font-weight:700;}
-  .msg.bot.whale .avatar{background:rgba(34,211,238,.15);border-color:var(--brand);color:var(--brand);}
-  .msg.bot.whale .body{color:var(--brand);}
-  .msg.system{justify-content:center;}
-  .msg.system .body{color:var(--text-dim);font-size:11px;font-style:italic;}
-
-  .chat-input{
-    display:flex;gap:8px;padding:12px;border-top:1px solid var(--border);
-  }
-  .chat-input input{
-    flex:1;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;
-    padding:10px 12px;color:var(--text);font-family:inherit;font-size:13px;
-  }
-  .chat-input button{
-    background:var(--brand);color:#04121a;border:none;border-radius:8px;
-    padding:0 18px;font-weight:800;cursor:pointer;font-family:inherit;
-  }
-
-  .side-panel{
-    background:var(--panel);border:1px solid var(--border);border-radius:14px;
-    padding:14px;display:flex;flex-direction:column;gap:14px;
-  }
-  .side-panel h4{margin:0;font-size:12px;color:var(--text-dim);letter-spacing:.5px;}
-  .badge-list{display:flex;flex-wrap:wrap;gap:6px;}
-  .badge-pick{
-    border:1px solid var(--border);background:var(--panel-2);color:var(--text);
-    padding:5px 9px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;
-  }
-  .badge-pick.selected{background:var(--brand-2);color:#fff;border-color:var(--brand-2);}
-  .online-list{display:flex;flex-direction:column;gap:8px;font-size:12px;}
-  .online-item{display:flex;align-items:center;gap:8px;color:var(--text-dim);}
-  .online-item .dot{width:6px;height:6px;border-radius:50%;background:var(--up);}
-
-  footer{
-    text-align:center;color:var(--text-dim);font-size:11px;padding:24px;border-top:1px solid var(--border);
-  }
+@media (max-width:980px){
+  .grid{grid-template-columns:1fr}
+  .hero{grid-template-columns:1fr 1fr}
+  .hero > div:first-child{grid-column:1/-1}
+  nav.tabs{order:9;margin-left:0}
+  .top-in{height:auto;flex-wrap:wrap;padding:10px 0;gap:10px}
+  thead th{top:0}
+  .gx{display:none}
+  th.col-global{display:none} td.col-global{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
 </head>
-<body data-theme="dark">
+<body>
 
-  <div class="banner">
-    <span>🔥 바이낸스 전용 코드로 가입하면 거래 수수료 payback 혜택</span>
-    <span class="code">코드: MYYTC3TS</span>
-    <a class="cta" href="https://www.binance.com/join?ref=MYYTC3TS" target="_blank" rel="noopener">코드 받고 가입하기</a>
-  </div>
-
-  <header>
-    <div class="logo">
-      <span class="dot"></span>
-      김프리즘 <small>KIMPRISM</small>
-    </div>
-    <nav class="tabs">
-      <button class="tab-btn active" data-view="dashboard">김프 대시보드</button>
-      <button class="tab-btn" data-view="stock">주식시장</button>
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="./">
+      <span class="brand-mark">김프리즘<span class="spectrum"></span></span>
+      <em>KIMPRISM</em>
+    </a>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-premium" aria-selected="true" aria-controls="view-premium">김프</button>
+      <button role="tab" id="tab-stock" aria-selected="false" aria-controls="view-stock">주식시장</button>
     </nav>
-    <div class="header-tools">
-      <button class="theme-toggle" id="themeToggle" title="라이트/다크 전환">🌙</button>
+    <div class="top-right">
+      <span class="pulse"><span class="dot" id="statusDot"></span><span id="statusText">연결 중</span></span>
+      <div class="seg" role="group" aria-label="국내 거래소 선택">
+        <button id="exUpbit" aria-pressed="true">업비트</button>
+        <button id="exBithumb" aria-pressed="false">빗썸</button>
+      </div>
+      <button class="icon-btn" id="themeBtn" aria-label="밝은 화면으로 바꾸기">☾</button>
     </div>
-  </header>
+  </div>
+</header>
 
-  <main>
+<div class="rail">
+  <div class="wrap rail-in" id="refRail">
+    <div class="rail-lead">
+      <b>거래소 수수료 20% payback</b>
+      <span>아래 코드로 가입하면 거래 수수료의 20%를 돌려받습니다.</span>
+    </div>
+  </div>
+</div>
 
-    <!-- ================= DASHBOARD (+ 커뮤니티 통합) ================= -->
-    <section class="view active" id="view-dashboard">
-    <div class="dash-split">
-    <div class="dash-main">
-      <div class="hero">
-        <div class="hero-card">
-          <div class="label">BTC/KRW · 업비트</div>
-          <div class="hero-price-row">
-            <div class="hero-price" id="heroUpbit">-</div>
-            <span class="badge up" id="heroPremBadge">+0.00%</span>
-          </div>
-          <div class="hero-sub" id="heroSub">글로벌 시세 대비 김치프리미엄</div>
-          <div class="hero-grid">
-            <div class="mini-stat">
-              <div class="label">글로벌 시세 (원화환산)</div>
-              <div class="val" id="heroBinance">-</div>
-            </div>
-            <div class="mini-stat">
-              <div class="label">기준 환율 (USD/KRW)</div>
-              <div class="val" id="heroFx">-</div>
-            </div>
-          </div>
-        </div>
-        <div class="hero-card">
-          <div class="label">시장 요약</div>
-          <div class="hero-grid" id="marketSummary" style="grid-template-columns:1fr 1fr;">
-            <div class="mini-stat"><div class="label">평균 김프</div><div class="val" id="sumAvgPrem">-</div></div>
-            <div class="mini-stat"><div class="label">최고 김프</div><div class="val" id="sumMaxPrem">-</div></div>
-            <div class="mini-stat"><div class="label">최저 김프(역프)</div><div class="val" id="sumMinPrem">-</div></div>
-            <div class="mini-stat"><div class="label">추적 코인 수</div><div class="val">22종</div></div>
-          </div>
-        </div>
+<main class="wrap">
+
+  <!-- ── 김프 뷰 ─────────────────────────── -->
+  <section id="view-premium" role="tabpanel" aria-labelledby="tab-premium">
+
+    <div class="notice" id="notice">
+      <span>⚠</span>
+      <div>
+        <b id="noticeTitle">시세를 불러오지 못했습니다</b>
+        <span id="noticeBody">거래소 응답을 기다리는 중입니다. 잠시 후 자동으로 다시 시도합니다.</span>
+        <div><code id="noticeDetail"></code></div>
       </div>
+    </div>
 
-      <div class="controls">
-        <div class="seg" id="exchangeSeg">
-          <button class="active" data-ex="upbit">업비트</button>
-          <button data-ex="bithumb">빗썸</button>
-        </div>
-        <input class="search" id="coinSearch" placeholder="코인명 또는 티커 검색 (예: BTC, 리플)">
-        <span class="updated" id="lastUpdated">업데이트: -</span>
+    <div class="hero">
+      <div>
+        <div class="k"><span id="heroExName">업비트</span> 비트코인</div>
+        <div class="big num" id="heroBtcKrw">—</div>
+        <div class="sub">바이낸스 원화 환산 <span class="num" id="heroBtcGlobal">—</span></div>
       </div>
+      <div>
+        <div class="k">비트코인 김프</div>
+        <div class="v num" id="heroBtcPremium">—</div>
+        <div class="sub" id="heroBtcPremiumTag">—</div>
+      </div>
+      <div>
+        <div class="k">테더(USDT) 김프</div>
+        <div class="v num" id="heroTether">—</div>
+        <div class="sub">업비트 <span class="num" id="heroTetherKrw">—</span></div>
+      </div>
+      <div>
+        <div class="k">달러/원 환율</div>
+        <div class="v num" id="heroFx">—</div>
+        <div class="sub" id="heroFxSrc">환산 기준</div>
+      </div>
+    </div>
 
-      <div class="table-wrap">
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>코인별 김치프리미엄</h2>
+          <span class="hint" id="tableHint">5초마다 갱신</span>
+        </div>
         <table>
           <thead>
             <tr>
               <th>코인</th>
-              <th></th>
-              <th id="colDomestic">업비트(KRW)</th>
-              <th>글로벌시세(원화환산)</th>
+              <th id="thDomestic">업비트 (원)</th>
+              <th class="col-global">바이낸스 (원화 환산)</th>
               <th>김프</th>
-              <th>변동(24h)</th>
+              <th>24시간</th>
             </tr>
           </thead>
-          <tbody id="priceTableBody"></tbody>
+          <tbody id="tbody">
+            <tr><td colspan="5" class="empty">거래소에서 시세를 받아오고 있습니다.</td></tr>
+          </tbody>
         </table>
-      </div>
-      </div>
+      </section>
 
-      <!-- ---- 커뮤니티(채팅) : 대시보드 옆에 항상 표시 ---- -->
-      <div class="dash-side">
-        <div class="chat-main">
-          <div class="chat-toolbar">
-            <button class="tool-btn" id="btnAlarm">🔔 알람</button>
-            <button class="tool-btn" id="btnBadge">🏷️ 칭호</button>
-            <button class="tool-btn danger" id="btnClear">🧹 청소</button>
-            <button class="tool-btn danger" id="btnReset">♻️ 초기화</button>
-          </div>
-          <div class="chat-messages" id="chatMessages"></div>
-          <div class="chat-input">
-            <input id="chatInput" placeholder="메시지를 입력하세요..." maxlength="200">
-            <button id="chatSend">전송</button>
-          </div>
+      <section class="panel chat">
+        <div class="panel-head">
+          <h2>커뮤니티</h2>
+          <span class="hint" id="chatHint">—</span>
         </div>
-        <div class="side-panel">
-          <div>
-            <h4>내 칭호</h4>
-            <div class="badge-list" id="badgeList">
-              <button class="badge-pick selected" data-badge="">없음</button>
-              <button class="badge-pick" data-badge="🐳고래">🐳 고래</button>
-              <button class="badge-pick" data-badge="🔥불장러">🔥 불장러</button>
-              <button class="badge-pick" data-badge="🧊존버">🧊 존버</button>
-              <button class="badge-pick" data-badge="🎯스나이퍼">🎯 스나이퍼</button>
-            </div>
-          </div>
-          <div>
-            <h4>접속자 (시뮬레이션)</h4>
-            <div class="online-list" id="onlineList"></div>
-          </div>
+        <div class="chat-tools">
+          <button class="chip" id="btnAlarm" aria-pressed="true">🔔 알림 켜짐</button>
+          <button class="chip" id="btnBadge">🏷 칭호 고르기</button>
+          <button class="chip" id="btnClear">🧹 화면 비우기</button>
+          <button class="chip" id="btnScroll" aria-pressed="true">⬇ 자동 따라가기</button>
         </div>
-      </div>
-      </div>
-    </section>
+        <div class="log" id="log" aria-live="polite"></div>
+        <div class="chat-form">
+          <input class="nick-in" type="text" id="nick" maxlength="16" placeholder="닉네임" aria-label="닉네임">
+          <input type="text" id="say" maxlength="300" placeholder="메시지를 입력하세요" aria-label="메시지">
+          <button class="send" id="sendBtn">보내기</button>
+        </div>
+      </section>
+    </div>
+  </section>
 
-    <!-- ================= STOCK ================= -->
-    <section class="view" id="view-stock">
-      <div class="stock-grid">
-        <div class="stock-panel">
-          <h3>코스피 시가총액 TOP 5</h3>
-          <div id="kospiList"></div>
-        </div>
-        <div class="stock-panel">
-          <h3>코스닥 등락률 TOP 5</h3>
-          <div id="kosdaqList"></div>
-        </div>
-      </div>
-    </section>
+  <!-- ── 주식 뷰 ─────────────────────────── -->
+  <section id="view-stock" role="tabpanel" aria-labelledby="tab-stock" hidden>
+    <div class="stock-grid">
+      <section class="panel">
+        <div class="panel-head"><h2>코스피 시가총액 상위</h2></div>
+        <p class="wip">시세 연동 대기 중입니다. 국내 주식은 무료 실시간 API가 없어 한국투자증권 등 증권사 오픈API 키를 연결해야 숫자가 표시됩니다.</p>
+        <ol class="stock-list">
+          <li><span class="rank">1</span><span class="nm">삼성전자</span><span class="val">—</span></li>
+          <li><span class="rank">2</span><span class="nm">SK하이닉스</span><span class="val">—</span></li>
+          <li><span class="rank">3</span><span class="nm">LG에너지솔루션</span><span class="val">—</span></li>
+          <li><span class="rank">4</span><span class="nm">삼성바이오로직스</span><span class="val">—</span></li>
+          <li><span class="rank">5</span><span class="nm">현대차</span><span class="val">—</span></li>
+        </ol>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>코스닥 시가총액 상위</h2></div>
+        <p class="wip">위와 같은 연동이 필요합니다. 연결 방법은 README에 정리해 두었습니다.</p>
+        <ol class="stock-list">
+          <li><span class="rank">1</span><span class="nm">알테오젠</span><span class="val">—</span></li>
+          <li><span class="rank">2</span><span class="nm">에코프로비엠</span><span class="val">—</span></li>
+          <li><span class="rank">3</span><span class="nm">에코프로</span><span class="val">—</span></li>
+          <li><span class="rank">4</span><span class="nm">HLB</span><span class="val">—</span></li>
+          <li><span class="rank">5</span><span class="nm">리가켐바이오</span><span class="val">—</span></li>
+        </ol>
+      </section>
+    </div>
+  </section>
+</main>
 
-  </main>
-
-  <footer>
-    김프리즘(Kimprism) — 실시간 시세는 참고용이며 투자 판단의 근거로 사용할 수 없습니다.
-  </footer>
+<footer class="wrap">
+  <p>김프리즘은 업비트·빗썸 공개 시세와 바이낸스 시세, 실시간 달러/원 환율을 환산해 김치프리미엄을 계산합니다.</p>
+  <p>표시된 숫자는 참고용이며 투자 판단의 근거로 쓰기 전에 거래소 앱에서 다시 확인하세요.</p>
+</footer>
 
 <script>
-/* =========================================================
-   김프리즘 Kimprism - main.js
-   ========================================================= */
-
-const COINS = [
-  {t:'BTC',n:'비트코인'}, {t:'ETH',n:'이더리움'}, {t:'XRP',n:'리플'},
-  {t:'SOL',n:'솔라나'}, {t:'DOGE',n:'도지코인'}, {t:'ADA',n:'에이다'},
-  {t:'TRX',n:'트론'}, {t:'AVAX',n:'아발란체'}, {t:'DOT',n:'폴카닷'},
-  {t:'LINK',n:'체인링크'}, {t:'MATIC',n:'폴리곤'}, {t:'SHIB',n:'시바이누'},
-  {t:'LTC',n:'라이트코인'}, {t:'BCH',n:'비트코인캐시'}, {t:'ATOM',n:'코스모스'},
-  {t:'UNI',n:'유니스왑'}, {t:'ETC',n:'이더리움클래식'}, {t:'NEAR',n:'니어프로토콜'},
-  {t:'APT',n:'앱토스'}, {t:'ARB',n:'아비트럼'}, {t:'SUI',n:'수이'}, {t:'SEI',n:'세이'}
+/* ════ 레퍼럴 ════════════════════════════ */
+const REFS = [
+  { name:'바이낸스', pay:'수수료 20% payback', code:'MYYTC3TS',       url:'https://www.binance.com/join?ref=MYYTC3TS' },
+  { name:'OKX',      pay:'수수료 20% payback', code:'79836506',       url:'https://www.okx.com/join/79836506' },
+  { name:'바이비트',  pay:'수수료 20% payback', code:'14665',          url:'https://www.bybit.com/invite?ref=14665' },
+  { name:'비트겟',   pay:'수수료 20% payback', code:'825y7984',       url:'https://www.bitget.com/referral/register?from=referral&clacCode=825y7984' },
+  { name:'MEXC',     pay:'수수료 20% payback', code:'mexc-wave323',   url:'https://www.mexc.com/register?inviteCode=mexc-wave323' },
 ];
 
-let state = {
-  exchange:'upbit',
-  fx: 1380,
-  prices: {}, // t -> {domestic, binanceUsd, prevDomestic}
-  theme:'dark',
-  alarmOn:true,
-  myBadge:''
-};
+const rail = document.getElementById('refRail');
+REFS.forEach(r => {
+  const el = document.createElement('div');
+  el.className = 'ref';
+  el.innerHTML = `
+    <div>
+      <div class="ref-name">${r.name}</div>
+      <div class="ref-pay">${r.pay}</div>
+    </div>
+    <div class="ref-code">
+      <code>${r.code}</code>
+      <button class="copy" type="button" data-code="${r.code}" aria-label="${r.name} 코드 복사">복사</button>
+    </div>
+    <a class="join" href="${r.url}" target="_blank" rel="noopener nofollow">코드 받고 가입</a>`;
+  rail.appendChild(el);
+});
+rail.addEventListener('click', e => {
+  const btn = e.target.closest('.copy');
+  if (!btn) return;
+  navigator.clipboard?.writeText(btn.dataset.code).then(() => {
+    const t = btn.textContent; btn.textContent = '복사됨';
+    setTimeout(() => { btn.textContent = t; }, 1400);
+  });
+});
 
-// -------- simulated baseline prices (used if live fetch unavailable) --------
-const BASE = {
-  BTC:{d:98_500_000,u:69500}, ETH:{d:4_650_000,u:3320}, XRP:{d:1250,u:0.90},
-  SOL:{d:265_000,u:190}, DOGE:{d:245,u:0.176}, ADA:{d:920,u:0.66},
-  TRX:{d:230,u:0.165}, AVAX:{d:52_000,u:37.5}, DOT:{d:9_800,u:7.05},
-  LINK:{d:24_500,u:17.6}, MATIC:{d:820,u:0.59}, SHIB:{d:0.0345,u:0.0000248},
-  LTC:{d:135_000,u:97}, BCH:{d:640_000,u:460}, ATOM:{d:9_200,u:6.6},
-  UNI:{d:13_500,u:9.7}, ETC:{d:34_000,u:24.5}, NEAR:{d:7_800,u:5.6},
-  APT:{d:14_200,u:10.2}, ARB:{d:1_050,u:0.755}, SUI:{d:5_600,u:4.02}, SEI:{d:610,u:0.44}
-};
+/* ════ 표시 도우미 ════════════════════════ */
+const won = n => n == null ? '—' : (n >= 1000 ? Math.round(n).toLocaleString('ko-KR')
+  : n >= 1 ? n.toFixed(1) : n.toPrecision(4)) + '원';
+const pct = n => n == null ? '—' : (n > 0 ? '+' : '') + n.toFixed(2) + '%';
+const cls = n => n == null ? '' : n > 0 ? 'rise' : n < 0 ? 'fall' : '';
+const hhmm = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
 
-function fmtKRW(n){
-  if(n===undefined||n===null||isNaN(n)) return '-';
-  if(n < 1) return '₩' + n.toFixed(4);
-  if(n < 100) return '₩' + n.toFixed(2);
-  return '₩' + Math.round(n).toLocaleString('ko-KR');
+/* ════ 테마 ════════════════════════════ */
+const themeBtn = document.getElementById('themeBtn');
+themeBtn.addEventListener('click', () => {
+  const light = document.documentElement.dataset.theme === 'light';
+  document.documentElement.dataset.theme = light ? 'dark' : 'light';
+  themeBtn.textContent = light ? '☾' : '☀';
+  themeBtn.setAttribute('aria-label', light ? '밝은 화면으로 바꾸기' : '어두운 화면으로 바꾸기');
+});
+
+/* ════ 탭 ══════════════════════════════ */
+document.querySelectorAll('[role=tab]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[role=tab]').forEach(t => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  });
+});
+
+/* ════ 거래소 선택 ════════════════════════ */
+let exchange = 'upbit';
+const exNames = { upbit:'업비트', bithumb:'빗썸' };
+const btnUpbit = document.getElementById('exUpbit');
+const btnBithumb = document.getElementById('exBithumb');
+
+function setExchange(next) {
+  exchange = next;
+  btnUpbit.setAttribute('aria-pressed', String(next === 'upbit'));
+  btnBithumb.setAttribute('aria-pressed', String(next === 'bithumb'));
+  document.getElementById('thDomestic').textContent = `${exNames[next]} (원)`;
+  document.getElementById('heroExName').textContent = exNames[next];
+  load();
 }
-function fmtPct(n){
-  const s = n>=0?'+':'';
-  return s + n.toFixed(2) + '%';
+btnUpbit.addEventListener('click', () => setExchange('upbit'));
+btnBithumb.addEventListener('click', () => setExchange('bithumb'));
+
+/* ════ 시세 불러오기 ══════════════════════ */
+const dot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const notice = document.getElementById('notice');
+const tbody = document.getElementById('tbody');
+let prev = {};      // 직전 가격 (깜빡임 효과)
+let failures = 0;
+
+function showNotice(title, body, detail) {
+  document.getElementById('noticeTitle').textContent = title;
+  document.getElementById('noticeBody').textContent = body;
+  document.getElementById('noticeDetail').textContent = detail || '';
+  notice.classList.add('show');
+}
+function hideNotice() { notice.classList.remove('show'); }
+
+function renderHero(d) {
+  const btc = d.coins.find(c => c.symbol === 'BTC');
+  document.getElementById('heroBtcKrw').textContent = btc ? won(btc.krw) : '—';
+  document.getElementById('heroBtcGlobal').textContent = btc ? won(btc.globalKrw) : '—';
+
+  const pmEl = document.getElementById('heroBtcPremium');
+  pmEl.textContent = btc ? pct(btc.premium) : '—';
+  pmEl.className = 'v num ' + cls(btc && btc.premium);
+  const tagEl = document.getElementById('heroBtcPremiumTag');
+  if (btc && btc.premium != null) {
+    tagEl.innerHTML = btc.premium >= 0
+      ? '<span class="tag kim">김프</span> 국내가 더 비쌈'
+      : '<span class="tag rev">역프</span> 국내가 더 쌈';
+  } else tagEl.textContent = '—';
+
+  const tEl = document.getElementById('heroTether');
+  tEl.textContent = d.tether ? pct(d.tether.premium) : '—';
+  tEl.className = 'v num ' + cls(d.tether && d.tether.premium);
+  document.getElementById('heroTetherKrw').textContent = d.tether ? won(d.tether.krw) : '—';
+
+  document.getElementById('heroFx').textContent = d.fx ? d.fx.rate.toFixed(2) : '—';
+  document.getElementById('heroFxSrc').textContent = d.fx ? '실시간 환율 반영' : '환율을 받아오지 못했습니다';
 }
 
-function initPrices(){
-  for(const c of COINS){
-    const b = BASE[c.t];
-    state.prices[c.t] = {
-      domestic: b.d,
-      binanceUsd: b.u,
-      prevDomestic: b.d,
-      change24h: (Math.random()*10 - 5)
+function renderTable(d) {
+  if (!d.coins.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">표시할 시세가 없습니다. 잠시 후 다시 시도합니다.</td></tr>';
+    return;
+  }
+  const rows = [];
+
+  if (d.tether) {
+    rows.push(`<tr class="tether-row">
+      <td><div class="coin"><span class="sym">USDT</span><span class="nm">테더 · 기준</span></div></td>
+      <td class="px num">${won(d.tether.krw)}</td>
+      <td class="gx num col-global">${won(d.tether.fxRate)}</td>
+      <td class="pm num ${cls(d.tether.premium)}">${pct(d.tether.premium)}</td>
+      <td class="num ${cls(d.tether.change24h)}">${pct(d.tether.change24h)}</td>
+    </tr>`);
+  }
+
+  for (const c of d.coins) {
+    const moved = prev[c.symbol] != null && prev[c.symbol] !== c.krw
+      ? (c.krw > prev[c.symbol] ? 'flash-up' : 'flash-down') : '';
+    prev[c.symbol] = c.krw;
+    rows.push(`<tr data-sym="${c.symbol}">
+      <td><div class="coin"><span class="sym">${c.symbol}</span><span class="nm">${c.name}</span></div></td>
+      <td class="px num ${moved}">${won(c.krw)}</td>
+      <td class="gx num col-global">${won(c.globalKrw)}</td>
+      <td class="pm num ${cls(c.premium)}">${pct(c.premium)}</td>
+      <td class="num ${cls(c.change24h)}">${pct(c.change24h)}</td>
+    </tr>`);
+  }
+  tbody.innerHTML = rows.join('');
+}
+
+async function load() {
+  try {
+    const r = await fetch(`/api/prices?exchange=${exchange}&t=${Date.now()}`);
+    const d = await r.json();
+
+    if (!d.coins || !d.coins.length) throw new Error((d.errors || []).join(' / ') || '빈 응답');
+
+    renderHero(d);
+    renderTable(d);
+    botWatchBtc(d);
+
+    failures = 0;
+    dot.className = 'dot live';
+    statusText.textContent = `갱신 ${hhmm(d.ts)}`;
+
+    if (!d.canComputePremium) {
+      showNotice('김프를 계산할 수 없습니다',
+        '환율 또는 해외 시세가 빠져 있어 김프 칸이 비어 있습니다. 국내 시세는 정상입니다.',
+        (d.errors || []).join(' / '));
+    } else if ((d.errors || []).length) {
+      showNotice('일부 데이터가 빠졌습니다', '표시된 코인은 실제 시세입니다.', d.errors.join(' / '));
+    } else {
+      hideNotice();
+    }
+  } catch (e) {
+    failures++;
+    dot.className = 'dot down';
+    statusText.textContent = '연결 끊김';
+    showNotice('시세를 불러오지 못했습니다',
+      '가짜 숫자를 보여주지 않기 위해 값을 비워 둡니다. 5초 뒤 자동으로 다시 시도합니다.',
+      String(e.message || e));
+    if (failures === 1) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">거래소 응답을 기다리고 있습니다.</td></tr>';
+    }
+  }
+}
+load();
+setInterval(load, 5000);
+
+/* ════ 채팅 ════════════════════════════ */
+const log = document.getElementById('log');
+const nickIn = document.getElementById('nick');
+const sayIn = document.getElementById('say');
+const chatHint = document.getElementById('chatHint');
+const BADGES = ['', '🐋 고래', '🦐 새우', '📈 존버', '🔥 단타', '🧊 관망'];
+let badgeIdx = 0;
+let autoScroll = true;
+let alarmOn = true;
+let seen = new Set();
+
+nickIn.value = localStorage.getItem('kimprism.nick') || '';
+nickIn.addEventListener('change', () => localStorage.setItem('kimprism.nick', nickIn.value.trim()));
+
+function appendMsg(m, isBot) {
+  const el = document.createElement('div');
+  el.className = 'msg' + (isBot ? ' bot' + (isBot === 'whale' ? ' whale' : '') : '');
+  const badge = m.badge ? `<span class="badge">${m.badge}</span>` : '';
+  el.innerHTML = `<div class="meta"><span class="nick">${escapeHtml(m.nick)}</span>${badge}
+    <span class="time">${hhmm(m.ts)}</span></div>
+    <div class="body">${escapeHtml(m.text)}</div>`;
+  log.appendChild(el);
+  while (log.children.length > 200) log.removeChild(log.firstChild);
+  if (autoScroll) log.scrollTop = log.scrollHeight;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+async function pollChat() {
+  try {
+    const r = await fetch('/api/chat');
+    const d = await r.json();
+    chatHint.textContent = d.persistent ? '실시간 대화' : '실시간 대화 · 임시 저장';
+    for (const m of d.messages || []) {
+      if (seen.has(m.id)) continue;
+      seen.add(m.id);
+      appendMsg(m, false);
+    }
+  } catch (_) {
+    chatHint.textContent = '대화 서버 연결 안 됨';
+  }
+}
+pollChat();
+setInterval(pollChat, 4000);
+
+async function send() {
+  const text = sayIn.value.trim();
+  if (!text) return;
+  sayIn.value = '';
+  try {
+    await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nick: nickIn.value.trim() || '익명', badge: BADGES[badgeIdx], text }),
+    });
+    pollChat();
+  } catch (_) {
+    appendMsg({ nick:'알림', text:'메시지를 보내지 못했습니다. 잠시 후 다시 시도해 주세요.', ts:Date.now() }, true);
+  }
+}
+document.getElementById('sendBtn').addEventListener('click', send);
+sayIn.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+document.getElementById('btnBadge').addEventListener('click', e => {
+  badgeIdx = (badgeIdx + 1) % BADGES.length;
+  e.currentTarget.textContent = badgeIdx === 0 ? '🏷 칭호 고르기' : `🏷 ${BADGES[badgeIdx]}`;
+});
+document.getElementById('btnClear').addEventListener('click', () => {
+  log.innerHTML = '';
+  appendMsg({ nick:'알림', text:'내 화면의 대화만 지웠습니다. 다른 사람 화면은 그대로입니다.', ts:Date.now() }, true);
+});
+document.getElementById('btnAlarm').addEventListener('click', e => {
+  alarmOn = !alarmOn;
+  e.currentTarget.setAttribute('aria-pressed', String(alarmOn));
+  e.currentTarget.textContent = alarmOn ? '🔔 알림 켜짐' : '🔕 알림 꺼짐';
+});
+document.getElementById('btnScroll').addEventListener('click', e => {
+  autoScroll = !autoScroll;
+  e.currentTarget.setAttribute('aria-pressed', String(autoScroll));
+  e.currentTarget.textContent = autoScroll ? '⬇ 자동 따라가기' : '⏸ 위치 고정';
+  if (autoScroll) log.scrollTop = log.scrollHeight;
+});
+
+/* ════ 알림봇 1 — 비트코인 급등·급락 ════════ */
+// 시뮬레이션이 아니라 실제로 받아온 가격 변화만 알린다.
+let anchor = null, anchorAt = 0;
+const MOVE = 0.5;          // 0.5% 이상 움직이면 알림
+const WINDOW = 10 * 60e3;  // 10분 기준점
+
+function botWatchBtc(d) {
+  const btc = d.coins.find(c => c.symbol === 'BTC');
+  if (!btc) return;
+  const now = Date.now();
+  if (anchor == null || now - anchorAt > WINDOW) { anchor = btc.krw; anchorAt = now; return; }
+  const diff = (btc.krw / anchor - 1) * 100;
+  if (Math.abs(diff) < MOVE) return;
+  if (alarmOn) {
+    appendMsg({
+      nick: '📢 시세알림봇',
+      text: `비트코인이 ${Math.abs(diff).toFixed(2)}% ${diff > 0 ? '급등' : '급락'}했습니다. 현재 ${won(btc.krw)} · 김프 ${pct(btc.premium)}`,
+      ts: now,
+    }, true);
+  }
+  anchor = btc.krw; anchorAt = now;
+}
+
+/* ════ 알림봇 2 — 바이낸스 고래 청산 ════════ */
+// 바이낸스 선물 강제청산 스트림을 브라우저에서 직접 구독한다(실데이터).
+(function whaleBot() {
+  let ws, retry = 0;
+  const MIN_USD = 100000;
+
+  function connect() {
+    try {
+      ws = new WebSocket('wss://fstream.binance.com/stream?streams=!forceOrder@arr');
+    } catch (_) { return schedule(); }
+
+    ws.onopen = () => { retry = 0; };
+    ws.onmessage = ev => {
+      if (!alarmOn) return;
+      let o;
+      try { o = JSON.parse(ev.data).data.o; } catch (_) { return; }
+      const qty = Number(o.q), price = Number(o.ap || o.p);
+      const usd = qty * price;
+      if (!(usd >= MIN_USD)) return;
+      const sym = String(o.s).replace(/USDT$/, '');
+      const side = o.S === 'SELL' ? '롱' : '숏';
+      appendMsg({
+        nick: '🐋 고래알림봇',
+        text: `${sym} ${side} 포지션 ${Math.round(usd).toLocaleString('ko-KR')}달러 청산 (바이낸스 선물)`,
+        ts: Date.now(),
+      }, 'whale');
     };
+    ws.onclose = schedule;
+    ws.onerror = () => { try { ws.close(); } catch (_) {} };
   }
-}
-
-let liveStatus = 'connecting';
-async function tryLiveFetch(){
-  try{
-    const res = await fetch('/api/prices');
-    if(!res.ok) throw new Error('bad status ' + res.status);
-    const data = await res.json();
-    if(data && data.fx) state.fx = data.fx;
-    let gotAny = false;
-    if(data && data.coins){
-      for(const t in data.coins){
-        if(state.prices[t]){
-          if(data.coins[t].domestic != null){ state.prices[t].domestic = data.coins[t].domestic; gotAny = true; }
-          if(data.coins[t].binanceUsd != null){ state.prices[t].binanceUsd = data.coins[t].binanceUsd; gotAny = true; }
-        }
-      }
-    }
-    liveStatus = gotAny ? 'live' : 'simulated';
-    if(data && data.debug && (data.debug.upbitError || data.debug.globalError)){
-      console.warn('가격 API 부분 오류:', data.debug);
-    }
-    if(!gotAny) simulateDrift();
-  }catch(e){
-    console.warn('가격 API 연결 실패, 시뮬레이션으로 대체:', e);
-    liveStatus = 'simulated';
-    simulateDrift();
+  function schedule() {
+    retry = Math.min(retry + 1, 6);
+    setTimeout(connect, 1000 * 2 ** retry);
   }
-}
-
-function simulateDrift(){
-  for(const t in state.prices){
-    const p = state.prices[t];
-    p.prevDomestic = p.domestic;
-    const drift = 1 + (Math.random()*0.006 - 0.003);
-    p.domestic = p.domestic * drift;
-    p.binanceUsd = p.binanceUsd * (1 + (Math.random()*0.005 - 0.0025));
-    p.change24h += (Math.random()*0.4 - 0.2);
-  }
-  state.fx += (Math.random()*2 - 1);
-}
-
-function renderHero(){
-  const btc = state.prices.BTC;
-  if(!btc) return;
-  const binanceKrw = btc.binanceUsd * state.fx;
-  const prem = ((btc.domestic - binanceKrw)/binanceKrw)*100;
-  document.getElementById('heroUpbit').textContent = fmtKRW(btc.domestic);
-  document.getElementById('heroBinance').textContent = fmtKRW(binanceKrw);
-  document.getElementById('heroFx').textContent = '₩' + state.fx.toFixed(1);
-  const badge = document.getElementById('heroPremBadge');
-  badge.textContent = fmtPct(prem);
-  badge.className = 'badge ' + (prem>=0?'up':'down');
-}
-
-function renderSummary(){
-  let sum=0,max=-999,min=999;
-  for(const c of COINS){
-    const p = state.prices[c.t];
-    const binanceKrw = p.binanceUsd * state.fx;
-    const prem = ((p.domestic - binanceKrw)/binanceKrw)*100;
-    sum += prem;
-    if(prem>max) max=prem;
-    if(prem<min) min=prem;
-  }
-  document.getElementById('sumAvgPrem').textContent = fmtPct(sum/COINS.length);
-  document.getElementById('sumMaxPrem').textContent = fmtPct(max);
-  document.getElementById('sumMinPrem').textContent = fmtPct(min);
-}
-
-function renderTable(){
-  const body = document.getElementById('priceTableBody');
-  const q = document.getElementById('coinSearch').value.trim().toLowerCase();
-  body.innerHTML = '';
-  for(const c of COINS){
-    if(q && !c.t.toLowerCase().includes(q) && !c.n.includes(q)) continue;
-    const p = state.prices[c.t];
-    const exFactor = state.exchange==='bithumb' ? (1 + (hashOffset(c.t)*0.001)) : 1;
-    const domestic = p.domestic * exFactor;
-    const binanceKrw = p.binanceUsd * state.fx;
-    const prem = ((domestic - binanceKrw)/binanceKrw)*100;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><div class="coin-name"><div class="coin-icon">${c.t.slice(0,1)}</div>${c.n}</div></td>
-      <td class="ticker">${c.t}</td>
-      <td>${fmtKRW(domestic)}</td>
-      <td>${fmtKRW(binanceKrw)}<span class="usd-sub">$${p.binanceUsd.toFixed(p.binanceUsd<1?6:2)}</span></td>
-      <td class="${prem>=0?'prem-pos':'prem-neg'}">${fmtPct(prem)}</td>
-      <td class="${p.change24h>=0?'chg-pos':'chg-neg'}">${fmtPct(p.change24h)}</td>
-    `;
-    body.appendChild(tr);
-  }
-}
-function hashOffset(t){
-  let h=0; for(const ch of t) h += ch.charCodeAt(0);
-  return (h%7) - 3;
-}
-
-function renderAll(){
-  renderHero();
-  renderSummary();
-  renderTable();
-  const statusLabel = liveStatus==='live' ? '실시간 연동' : (liveStatus==='simulated' ? '시뮬레이션 모드' : '연결중');
-  document.getElementById('lastUpdated').textContent = '[' + statusLabel + '] 업데이트: ' + new Date().toLocaleTimeString('ko-KR');
-}
-
-// -------- tabs --------
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-    document.getElementById('view-'+btn.dataset.view).classList.add('active');
-  });
-});
-
-// -------- exchange toggle --------
-document.getElementById('exchangeSeg').addEventListener('click', e=>{
-  const btn = e.target.closest('button');
-  if(!btn) return;
-  document.querySelectorAll('#exchangeSeg button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  state.exchange = btn.dataset.ex;
-  document.getElementById('colDomestic').textContent = state.exchange==='upbit' ? '업비트(KRW)' : '빗썸(KRW)';
-  renderTable();
-});
-
-document.getElementById('coinSearch').addEventListener('input', renderTable);
-
-// -------- theme toggle --------
-document.getElementById('themeToggle').addEventListener('click', ()=>{
-  state.theme = state.theme==='dark' ? 'light' : 'dark';
-  document.body.setAttribute('data-theme', state.theme);
-  document.getElementById('themeToggle').textContent = state.theme==='dark' ? '🌙' : '☀️';
-});
-
-// -------- stock market (simulated) --------
-const KOSPI_TOP5 = [
-  {n:'삼성전자',v:'+1.2%'}, {n:'SK하이닉스',v:'+2.8%'}, {n:'LG에너지솔루션',v:'-0.6%'},
-  {n:'삼성바이오로직스',v:'+0.4%'}, {n:'현대차',v:'-1.1%'}
-];
-const KOSDAQ_TOP5 = [
-  {n:'에코프로비엠',v:'+4.5%'}, {n:'알테오젠',v:'+3.1%'}, {n:'HLB',v:'-2.3%'},
-  {n:'클래시스',v:'+2.0%'}, {n:'리가켐바이오',v:'+1.6%'}
-];
-function renderStocks(){
-  const kospi = document.getElementById('kospiList');
-  kospi.innerHTML = KOSPI_TOP5.map((s,i)=>`
-    <div class="stock-row">
-      <div class="stock-name"><span class="rank">${i+1}</span>${s.n}</div>
-      <div class="${s.v.startsWith('+')?'chg-pos':'chg-neg'}">${s.v}</div>
-    </div>`).join('');
-  const kosdaq = document.getElementById('kosdaqList');
-  kosdaq.innerHTML = KOSDAQ_TOP5.map((s,i)=>`
-    <div class="stock-row">
-      <div class="stock-name"><span class="rank">${i+1}</span>${s.n}</div>
-      <div class="${s.v.startsWith('+')?'chg-pos':'chg-neg'}">${s.v}</div>
-    </div>`).join('');
-}
-
-// -------- chat --------
-const NICKS = ['불장예감','존버킹','리플러버','코인초보','새벽매수','물타기장인','알트코인헌터','짬프리미엄'];
-const chatMessages = document.getElementById('chatMessages');
-
-function addMsg({name, body, avatar, cls='', badge=''}){
-  const div = document.createElement('div');
-  div.className = 'msg ' + cls;
-  const time = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-  if(cls==='system'){
-    div.innerHTML = `<div class="body">${body}</div>`;
-  } else {
-    div.innerHTML = `
-      <div class="avatar">${avatar}</div>
-      <div>
-        <div class="name">${badge?`<span class="title">${badge}</span>`:''}${name}<span class="time">${time}</span></div>
-        <div class="body">${body}</div>
-      </div>`;
-  }
-  chatMessages.appendChild(div);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-  // cap history
-  while(chatMessages.children.length > 200){
-    chatMessages.removeChild(chatMessages.firstChild);
-  }
-}
-
-function randomChatter(){
-  const nick = NICKS[Math.floor(Math.random()*NICKS.length)];
-  const lines = [
-    '지금 김프 얼마임?', '비트 이거 실화냐 ㄷㄷ', '알트 언제 갈아탐?',
-    '업비트 서버 또 느려짐', '리플 드디어 움직이네', '존버는 승리한다',
-    '오늘 거래량 미쳤다', '빗썸 프리미엄 더 높네', '이번엔 진짜 다른듯'
-  ];
-  addMsg({name:nick, body:lines[Math.floor(Math.random()*lines.length)], avatar:nick.slice(0,1)});
-}
-
-function surgeAlertBot(){
-  const up = Math.random() > 0.5;
-  const coin = COINS[Math.floor(Math.random()*COINS.length)];
-  const pct = (Math.random()*6+3).toFixed(1);
-  addMsg({
-    name:'급등락알림봇', avatar:'⚡',
-    body: up ? `${coin.n}(${coin.t}) 5분간 +${pct}% 급등 🚀` : `${coin.n}(${coin.t}) 5분간 -${pct}% 급락 📉`,
-    cls:'bot', badge:'BOT'
-  });
-}
-
-function whaleAlertBot(){
-  const side = Math.random()>0.5 ? '롱' : '숏';
-  const amount = (Math.random()*40+5).toFixed(1);
-  const coin = ['BTC','ETH','SOL'][Math.floor(Math.random()*3)];
-  addMsg({
-    name:'고래알림봇', avatar:'🐋',
-    body:`바이낸스 ${coin} ${side} 포지션 $${amount}M 청산 발생`,
-    cls:'bot whale', badge:'WHALE'
-  });
-}
-
-function scheduleBots(){
-  setTimeout(()=>{ surgeAlertBot(); scheduleBots(); }, 20000 + Math.random()*25000);
-}
-function scheduleWhale(){
-  setTimeout(()=>{ whaleAlertBot(); scheduleWhale(); }, 18000 + Math.random()*27000);
-}
-function scheduleChatter(){
-  setTimeout(()=>{ randomChatter(); scheduleChatter(); }, 6000 + Math.random()*9000);
-}
-
-document.getElementById('chatSend').addEventListener('click', sendMyMessage);
-document.getElementById('chatInput').addEventListener('keydown', e=>{
-  if(e.key==='Enter') sendMyMessage();
-});
-function sendMyMessage(){
-  const input = document.getElementById('chatInput');
-  const val = input.value.trim();
-  if(!val) return;
-  addMsg({name:'나', body:val, avatar:'나', badge:state.myBadge});
-  input.value = '';
-}
-
-document.getElementById('btnAlarm').addEventListener('click', function(){
-  state.alarmOn = !state.alarmOn;
-  this.textContent = state.alarmOn ? '🔔 알람 ON' : '🔕 알람 OFF';
-});
-document.getElementById('btnClear').addEventListener('click', ()=>{
-  chatMessages.innerHTML='';
-  addMsg({cls:'system', body:'방이 청소되었습니다.'});
-});
-document.getElementById('btnReset').addEventListener('click', ()=>{
-  chatMessages.innerHTML='';
-  addMsg({cls:'system', body:'채팅이 초기화되었습니다.'});
-});
-document.getElementById('btnBadge').addEventListener('click', ()=>{
-  document.querySelector('.side-panel h4').scrollIntoView({behavior:'smooth'});
-});
-document.getElementById('badgeList').addEventListener('click', e=>{
-  const btn = e.target.closest('.badge-pick');
-  if(!btn) return;
-  document.querySelectorAll('.badge-pick').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  state.myBadge = btn.dataset.badge;
-});
-
-function renderOnline(){
-  const list = document.getElementById('onlineList');
-  const shuffled = [...NICKS].sort(()=>Math.random()-0.5).slice(0,5);
-  list.innerHTML = shuffled.map(n=>`<div class="online-item"><span class="dot"></span>${n}</div>`).join('');
-}
-
-// -------- init --------
-initPrices();
-renderAll();
-renderStocks();
-renderOnline();
-addMsg({cls:'system', body:'커뮤니티 채팅에 오신 것을 환영합니다. 서로 존중하는 대화 부탁드려요.'});
-
-tryLiveFetch().finally(()=>{ renderAll(); });
-setInterval(async ()=>{ await tryLiveFetch(); renderAll(); }, 8000);
-setInterval(renderOnline, 15000);
-scheduleBots();
-scheduleWhale();
-scheduleChatter();
+  connect();
+})();
 </script>
 </body>
 </html>
