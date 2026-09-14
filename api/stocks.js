@@ -1,120 +1,120 @@
-// /api/stocks.js
-// 김프리즘 - 코스피·코스닥 주요 종목 시세
-//
-// 네이버 증권 공개 시세를 우선 사용하고, 실패하면 야후 파이낸스로 넘어간다.
-// 둘 다 API 키가 필요 없다. 못 받아오면 가짜 숫자를 만들지 않고 비워 둔다.
+/* =====================================================================
+   /api/stocks.js  —  코스피·코스닥 시세 (네이버 1순위, 야후 폴백)
+
+   GET 응답을 CDN에 60초 캐시한다. 접속자가 몇 명이든 실제 외부 API 호출은
+   1분에 한 번뿐이라, 함수 호출 수가 접속자 수와 무관해진다.
+   ===================================================================== */
+
+const CACHE_SECONDS = 60;
 
 const KOSPI = [
-  ['005930', '삼성전자'],
-  ['000660', 'SK하이닉스'],
-  ['373220', 'LG에너지솔루션'],
-  ['207940', '삼성바이오로직스'],
-  ['005380', '현대차'],
+  { code: '005930', name: '삼성전자' },
+  { code: '000660', name: 'SK하이닉스' },
+  { code: '373220', name: 'LG에너지솔루션' },
+  { code: '207940', name: '삼성바이오로직스' },
+  { code: '005380', name: '현대차' }
 ];
 
 const KOSDAQ = [
-  ['196170', '알테오젠'],
-  ['247540', '에코프로비엠'],
-  ['086520', '에코프로'],
-  ['028300', 'HLB'],
-  ['141080', '리가켐바이오'],
+  { code: '247540', name: '에코프로비엠' },
+  { code: '086520', name: '에코프로' },
+  { code: '028300', name: 'HLB' },
+  { code: '196170', name: '알테오젠' },
+  { code: '068270', name: '셀트리온제약' }
 ];
 
-const KOSDAQ_CODES = new Set(KOSDAQ.map(([c]) => c));
+// ── 네이버 증권 (비공식 모바일 API, 키 불필요) ───────────────────────
+async function fromNaver(items) {
+  const codes = items.map(i => i.code).join(',');
+  const res = await fetch(
+    `https://polling.finance.naver.com/api/realtime/domestic/stock/${codes}`,
+    {
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        Referer: 'https://finance.naver.com/'
+      }
+    }
+  );
+  if (!res.ok) throw new Error(`naver ${res.status}`);
+  const json = await res.json();
+  const list = (json && json.datas) || [];
 
-async function getJSON(url, headers, ms = 6000) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ms);
-  try {
-    const r = await fetch(url, {
-      signal: ctrl.signal,
-      headers: Object.assign(
-        {
-          accept: 'application/json, text/plain, */*',
-          'accept-language': 'ko-KR,ko;q=0.9',
-          'user-agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-        },
-        headers || {}
-      ),
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return await r.json();
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-const toNum = v => Number(String(v == null ? '' : v).replace(/,/g, ''));
-
-/* ── 1순위: 네이버 증권 ── */
-async function fromNaver(code) {
-  const d = await getJSON(`https://m.stock.naver.com/api/stock/${code}/basic`, {
-    referer: `https://m.stock.naver.com/domestic/stock/${code}/total`,
+  return items.map(item => {
+    const d = list.find(x => x.itemCode === item.code);
+    if (!d) return { ...item, price: null, change: null, changeRate: null };
+    return {
+      ...item,
+      price: Number(d.closePrice.replace(/,/g, '')),
+      change: Number(String(d.compareToPreviousClosePrice).replace(/,/g, '')),
+      changeRate: Number(d.fluctuationsRatio)
+    };
   });
-  const price = toNum(d && d.closePrice);
-  const rate = toNum(d && d.fluctuationsRatio);
-  if (!(price > 0)) throw new Error('가격 없음');
-  // riseFall: 2=하락, 5=상승 등. 부호는 등락률에 이미 붙어 나오는 경우가 많으나
-  // 안전하게 하락 표시일 때 음수로 맞춘다.
-  const down = String(d.compareToPreviousPrice && d.compareToPreviousPrice.code) === '5';
-  const change = Number.isFinite(rate) ? (down ? -Math.abs(rate) : rate) : null;
-  return { price, change };
 }
 
-/* ── 2순위: 야후 파이낸스 ── */
-async function fromYahoo(code) {
-  const suffix = KOSDAQ_CODES.has(code) ? 'KQ' : 'KS';
-  for (const host of ['https://query1.finance.yahoo.com', 'https://query2.finance.yahoo.com']) {
-    try {
-      const d = await getJSON(`${host}/v8/finance/chart/${code}.${suffix}?interval=1d&range=2d`);
-      const meta = d && d.chart && d.chart.result && d.chart.result[0] && d.chart.result[0].meta;
-      const price = Number(meta && meta.regularMarketPrice);
-      const base = Number(meta && (meta.chartPreviousClose || meta.previousClose));
-      if (!(price > 0)) throw new Error('가격 없음');
-      return { price, change: base > 0 ? (price / base - 1) * 100 : null };
-    } catch (_) {}
-  }
-  throw new Error('야후 응답 없음');
+// ── 야후 파이낸스 폴백 ───────────────────────────────────────────────
+async function fromYahoo(items, suffix) {
+  const symbols = items.map(i => `${i.code}.${suffix}`).join(',');
+  const res = await fetch(
+    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`,
+    { headers: { 'User-Agent': 'Mozilla/5.0' } }
+  );
+  if (!res.ok) throw new Error(`yahoo ${res.status}`);
+  const json = await res.json();
+  const list = (json.quoteResponse && json.quoteResponse.result) || [];
+
+  return items.map(item => {
+    const d = list.find(x => x.symbol === `${item.code}.${suffix}`);
+    if (!d) return { ...item, price: null, change: null, changeRate: null };
+    return {
+      ...item,
+      price: d.regularMarketPrice ?? null,
+      change: d.regularMarketChange ?? null,
+      changeRate: d.regularMarketChangePercent ?? null
+    };
+  });
 }
 
-async function quote([code, name]) {
-  const tried = [];
-  for (const [label, fn] of [['naver', fromNaver], ['yahoo', fromYahoo]]) {
+async function load(items, yahooSuffix) {
+  try {
+    return await fromNaver(items);
+  } catch (_) {
     try {
-      const q = await fn(code);
-      return { code, name, price: q.price, change: q.change, source: label };
-    } catch (e) {
-      tried.push(`${label} ${e.message}`);
+      return await fromYahoo(items, yahooSuffix);
+    } catch (_) {
+      return items.map(i => ({ ...i, price: null, change: null, changeRate: null }));
     }
   }
-  throw new Error(`${name}(${code}): ${tried.join(' / ')}`);
 }
 
-async function board(list) {
-  const settled = await Promise.allSettled(list.map(quote));
-  const rows = [];
-  const errors = [];
-  settled.forEach((s, i) => {
-    if (s.status === 'fulfilled') rows.push(s.value);
-    else errors.push(`${list[i][1]}: ${s.reason && s.reason.message}`);
-  });
-  return { rows, errors };
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // 캐시 헤더가 비용을 결정한다.
+  res.setHeader(
+    'Cache-Control',
+    `public, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=120`
+  );
+
+  try {
+    const [kospi, kosdaq] = await Promise.all([
+      load(KOSPI, 'KS'),
+      load(KOSDAQ, 'KQ')
+    ]);
+
+    const hasData = [...kospi, ...kosdaq].some(s => s.price != null);
+    if (!hasData) {
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(503).json({ ok: false, error: '시세를 불러올 수 없습니다' });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      kospi,
+      kosdaq,
+      updatedAt: Date.now()
+    });
+  } catch (err) {
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(503).json({ ok: false, error: '시세를 불러올 수 없습니다' });
+  }
 }
-
-module.exports = async (req, res) => {
-  const [kospi, kosdaq] = await Promise.all([board(KOSPI), board(KOSDAQ)]);
-  const errors = [...kospi.errors, ...kosdaq.errors];
-
-  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=180');
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-
-  const ok = kospi.rows.length > 0 || kosdaq.rows.length > 0;
-  return res.status(ok ? 200 : 503).json({
-    ok,
-    ts: Date.now(),
-    kospi: kospi.rows,
-    kosdaq: kosdaq.rows,
-    errors,
-  });
-};
