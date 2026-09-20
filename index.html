@@ -333,6 +333,8 @@ footer p{margin:0 0 6px}
   <p>표시된 숫자는 참고용이며 투자 판단의 근거로 쓰기 전에 거래소 앱에서 다시 확인하세요.</p>
 </footer>
 
+<script src="realtime.js"></script>
+<script src="chat-client.js"></script>
 <script>
 /* ════ 레퍼럴 ════════════════════════════ */
 const REFS = [
@@ -501,17 +503,122 @@ function renderTable(d) {
   tbody.innerHTML = rows.join('');
 }
 
-async function load() {
+/* 코인 이름표. 시세 자체는 거래소 웹소켓에서 직접 받으므로
+   서버가 이름을 내려줄 필요가 없어졌다. */
+const COIN_NAMES = {
+  BTC:'비트코인', ETH:'이더리움', XRP:'리플', SOL:'솔라나', DOGE:'도지코인',
+  ADA:'에이다', TRX:'트론', AVAX:'아발란체', LINK:'체인링크', DOT:'폴카닷',
+  BCH:'비트코인캐시', LTC:'라이트코인', ETC:'이더리움클래식', XLM:'스텔라루멘',
+  ATOM:'코스모스', HBAR:'헤데라', SUI:'수이', APT:'앱토스', NEAR:'니어프로토콜',
+  SHIB:'시바이누', AAVE:'에이브', SAND:'샌드박스',
+};
+const TRACKED = Object.keys(COIN_NAMES);
+
+/* 웹소켓 스냅샷 → 화면이 쓰던 모양으로 변환 */
+function fromRealtime(snap) {
+  const coins = [];
+  let tether = null;
+
+  for (const r of snap.rows) {
+    if (r.upbitPrice == null) continue;
+
+    if (r.symbol === 'USDT') {
+      tether = {
+        krw: r.upbitPrice,
+        fxRate: snap.fx.rate,
+        premium: r.premium,
+        change24h: r.upbitChangeRate,
+      };
+      continue;
+    }
+
+    coins.push({
+      symbol: r.symbol,
+      name: COIN_NAMES[r.symbol] || r.symbol,
+      krw: r.upbitPrice,
+      globalKrw: r.binanceKrw,
+      premium: r.premium,
+      change24h: r.upbitChangeRate,
+    });
+  }
+
+  // BTC는 맨 위 고정, 나머지는 김프 높은 순
+  coins.sort((a, b) => {
+    if (a.symbol === 'BTC') return -1;
+    if (b.symbol === 'BTC') return 1;
+    if (a.premium == null) return 1;
+    if (b.premium == null) return -1;
+    return b.premium - a.premium;
+  });
+
+  return {
+    coins,
+    tether,
+    fx: snap.fx.rate ? { rate: snap.fx.rate } : null,
+    canComputePremium: snap.fx.rate != null,
+    ts: snap.updatedAt,
+    errors: [],
+  };
+}
+
+function paint(d) {
+  renderHero(d);
+  renderTable(d);
+  botWatchBtc(d);
+}
+
+/* ── 업비트: 브라우저가 거래소 웹소켓에 직접 붙는다 (서버 경유 없음) ── */
+let rtRunning = false;
+
+function startRealtime() {
+  if (rtRunning) return;
+  rtRunning = true;
+
+  KimprismRealtime.init({
+    symbols: [...TRACKED, 'USDT'],
+    pegged: ['USDT'],        // 업비트엔 KRW-USDT가 있지만 바이낸스엔 USDTUSDT가 없다
+    onUpdate(snap) {
+      if (exchange !== 'upbit') return;
+      const d = fromRealtime(snap);
+      if (!d.coins.length) return;
+
+      paint(d);
+      dot.className = 'dot live';
+      statusText.textContent = `갱신 ${hhmm(d.ts)}`;
+
+      if (!d.canComputePremium) {
+        showNotice('김프를 계산할 수 없습니다',
+          '환율을 받아오지 못해 김프 칸이 비어 있습니다. 국내 시세는 정상입니다.', '');
+      } else {
+        hideNotice();
+      }
+    },
+    onStatus(status) {
+      if (exchange !== 'upbit') return;
+      if (status.upbit === 'live' || status.binance === 'live') return;
+      dot.className = 'dot down';
+      statusText.textContent = status.upbit === 'connecting' ? '연결 중' : '재연결 중';
+    },
+  });
+}
+
+function stopRealtime() {
+  if (!rtRunning) return;
+  KimprismRealtime.stop();
+  rtRunning = false;
+}
+
+/* ── 빗썸: 웹소켓 경로가 없어 기존 서버 프록시를 그대로 쓴다 ── */
+let bithumbTimer = null;
+
+async function loadBithumb() {
   try {
-    const r = await fetch(`/api/prices?exchange=${exchange}&t=${Date.now()}`);
+    const r = await fetch(`/api/prices?exchange=bithumb&t=${Date.now()}`);
     const d = await r.json();
 
     if (!d.coins || !d.coins.length) throw new Error((d.errors || []).join(' / ') || '빈 응답');
 
-    renderHero(d);
-    renderTable(d);
-    botWatchBtc(d);
-
+    paint(d);
     failures = 0;
     dot.className = 'dot live';
     statusText.textContent = `갱신 ${hhmm(d.ts)}`;
@@ -530,15 +637,33 @@ async function load() {
     dot.className = 'dot down';
     statusText.textContent = '연결 끊김';
     showNotice('시세를 불러오지 못했습니다',
-      '가짜 숫자를 보여주지 않기 위해 값을 비워 둡니다. 5초 뒤 자동으로 다시 시도합니다.',
+      '가짜 숫자를 보여주지 않기 위해 값을 비워 둡니다. 곧 다시 시도합니다.',
       String(e.message || e));
     if (failures === 1) {
       tbody.innerHTML = '<tr><td colspan="5" class="empty">거래소 응답을 기다리고 있습니다.</td></tr>';
     }
   }
 }
+
+function load() {
+  prev = {};
+  hideNotice();
+
+  if (exchange === 'upbit') {
+    clearInterval(bithumbTimer);
+    bithumbTimer = null;
+    startRealtime();
+    const d = fromRealtime(KimprismRealtime.snapshot());
+    if (d.coins.length) paint(d);          // 탭 전환 시 빈 화면 방지
+  } else {
+    stopRealtime();
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">거래소 응답을 기다리고 있습니다.</td></tr>';
+    loadBithumb();
+    clearInterval(bithumbTimer);
+    bithumbTimer = setInterval(loadBithumb, 5000);
+  }
+}
 load();
-setInterval(load, 5000);
 
 /* ════ 채팅 ════════════════════════════ */
 const log = document.getElementById('log');
@@ -552,7 +677,11 @@ let alarmOn = true;
 let seen = new Set();
 
 nickIn.value = localStorage.getItem('kimprism.nick') || '';
-nickIn.addEventListener('change', () => localStorage.setItem('kimprism.nick', nickIn.value.trim()));
+nickIn.addEventListener('change', () => {
+  const nick = nickIn.value.trim();
+  localStorage.setItem('kimprism.nick', nick);
+  KimprismChat.setNick(nick || '익명');
+});
 
 function appendMsg(m, isBot) {
   const el = document.createElement('div');
@@ -569,36 +698,35 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
-async function pollChat() {
-  try {
-    const r = await fetch('/api/chat');
-    const d = await r.json();
-    chatHint.textContent = d.persistent ? '실시간 대화' : '실시간 대화 · 임시 저장';
-    for (const m of d.messages || []) {
+/* 폴링은 chat-client.js가 맡는다.
+   탭이 숨으면 완전히 멈추고, 조용하면 간격을 3초→15초로 늘린다. */
+KimprismChat.start({
+  nick: nickIn.value.trim() || '익명',
+  badge: BADGES[badgeIdx],
+  onMessages(messages) {
+    chatHint.textContent = '실시간 대화';
+    for (const m of messages) {
       if (seen.has(m.id)) continue;
       seen.add(m.id);
       appendMsg(m, false);
     }
-  } catch (_) {
-    chatHint.textContent = '대화 서버 연결 안 됨';
-  }
-}
-pollChat();
-setInterval(pollChat, 4000);
+  },
+  onError(msg) {
+    chatHint.textContent = msg || '대화 서버 연결 안 됨';
+  },
+});
 
 async function send() {
   const text = sayIn.value.trim();
   if (!text) return;
   sayIn.value = '';
-  try {
-    await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nick: nickIn.value.trim() || '익명', badge: BADGES[badgeIdx], text }),
-    });
-    pollChat();
-  } catch (_) {
-    appendMsg({ nick:'알림', text:'메시지를 보내지 못했습니다. 잠시 후 다시 시도해 주세요.', ts:Date.now() }, true);
+  const res = await KimprismChat.send(text);
+  if (!res.ok) {
+    appendMsg({
+      nick: '알림',
+      text: res.error || '메시지를 보내지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      ts: Date.now(),
+    }, true);
   }
 }
 document.getElementById('sendBtn').addEventListener('click', send);
@@ -606,6 +734,7 @@ sayIn.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
 
 document.getElementById('btnBadge').addEventListener('click', e => {
   badgeIdx = (badgeIdx + 1) % BADGES.length;
+  KimprismChat.setBadge(BADGES[badgeIdx]);
   e.currentTarget.textContent = badgeIdx === 0 ? '🏷 칭호 고르기' : `🏷 ${BADGES[badgeIdx]}`;
 });
 document.getElementById('btnClear').addEventListener('click', () => {
