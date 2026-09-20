@@ -836,13 +836,18 @@ function renderStocks(listEl, hintEl, rows) {
     hintEl.textContent = '연결 안 됨';
     return;
   }
-  listEl.innerHTML = rows.map((s, i) => `
+  listEl.innerHTML = rows.map((s, i) => {
+    // change 는 변동 "금액"(원), changeRate 가 "퍼센트"다. 둘을 섞으면 안 된다.
+    const rate = s.changeRate != null ? s.changeRate
+      : (s.change != null && s.price ? (s.change / (s.price - s.change)) * 100 : null);
+    return `
     <li>
       <span class="rank">${i + 1}</span>
       <span class="nm">${escapeHtml(s.name)}</span>
       <span class="val">${stockPrice(s.price)}
-        <b class="${cls(s.change)}">${pct(s.change)}</b></span>
-    </li>`).join('');
+        <b class="${cls(rate)}">${pct(rate)}</b></span>
+    </li>`;
+  }).join('');
   hintEl.textContent = '장중 시세';
 }
 
