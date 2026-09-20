@@ -55,6 +55,9 @@ const KimprismRealtime = (() => {
   // ── 내부 상태 ────────────────────────────────────────────────────────
   const state = {
     symbols: DEFAULT_SYMBOLS.slice(),
+    // 1달러에 고정된 종목(USDT 등). 바이낸스에 USDTUSDT 스트림이 없으므로
+    // 구독에서 빼고, 해외가를 1달러로 두고 계산한다.
+    pegged: new Set(),
     upbit: new Map(),    // SYMBOL -> { price, changeRate, volume, ts }
     binance: new Map(),  // SYMBOL -> { price, changeRate, ts }
     fx: { rate: null, source: null, ts: 0 },
@@ -97,10 +100,14 @@ const KimprismRealtime = (() => {
 
     for (const sym of state.symbols) {
       const u = state.upbit.get(sym);
-      const b = state.binance.get(sym);
+      // 1달러 고정 종목은 해외가를 1달러로 본다 → 김프가 곧 환율 대비 괴리
+      const b = state.pegged.has(sym)
+        ? { price: 1, changeRate: null, ts: Date.now() }
+        : state.binance.get(sym);
 
       const row = {
         symbol: sym,
+        pegged: state.pegged.has(sym),
         upbitPrice: u ? u.price : null,              // 원
         upbitChangeRate: u ? u.changeRate : null,    // %
         upbitVolume24h: u ? u.volume : null,         // 원
@@ -244,7 +251,10 @@ const KimprismRealtime = (() => {
     if (stopped) return;
     setStatus('binance', 'connecting');
 
-    const streams = state.symbols
+    const tradable = state.symbols.filter(s => !state.pegged.has(s));
+    if (!tradable.length) { setStatus('binance', 'idle'); return; }
+
+    const streams = tradable
       .map(s => `${s.toLowerCase()}usdt@ticker`)
       .join('/');
     const host = BINANCE_HOSTS[binanceHostIndex % BINANCE_HOSTS.length];
@@ -298,6 +308,9 @@ const KimprismRealtime = (() => {
     stopped = false;
     if (Array.isArray(options.symbols) && options.symbols.length) {
       state.symbols = options.symbols.map(s => s.toUpperCase());
+    }
+    if (Array.isArray(options.pegged)) {
+      state.pegged = new Set(options.pegged.map(s => s.toUpperCase()));
     }
     state.onUpdate = options.onUpdate || null;
     state.onStatus = options.onStatus || null;
