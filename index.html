@@ -69,8 +69,9 @@ nav.tabs button[aria-selected="true"]{background:var(--card);color:var(--text);b
   background:var(--card);border:1px solid var(--line);color:var(--text);
   font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;
   box-shadow:0 2px 10px rgba(0,0,0,.28)}
-.rail-nav.prev{left:-6px}
-.rail-nav.next{right:-6px}
+/* 화면 밖으로 내보내면 좁은 화면에서 페이지가 좌우로 밀린다 */
+.rail-nav.prev{left:2px}
+.rail-nav.next{right:2px}
 .rail-nav:disabled{opacity:0;pointer-events:none}
 @media (prefers-reduced-motion:reduce){.rail-in{scroll-behavior:auto}}
 .rail-lead{flex:0 0 auto;max-width:200px;padding-right:6px}
@@ -150,6 +151,7 @@ tbody tr:last-child td{border-bottom:0}
 .msg .meta{display:flex;align-items:center;gap:6px;margin-bottom:2px}
 .msg .nick{font-weight:700;font-size:12.5px}
 .msg .badge{font-size:10.5px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber);font-weight:700}
+.msg .uid{font-size:10.5px;color:var(--dim);font-family:var(--mono);letter-spacing:.04em}
 .msg .time{font-size:11px;color:var(--dim);font-family:var(--mono)}
 .msg .body{color:var(--text);word-break:break-word;white-space:pre-wrap}
 .bot{border-left:2px solid var(--amber);padding-left:10px}
@@ -162,6 +164,18 @@ tbody tr:last-child td{border-bottom:0}
 .send{background:var(--text);color:var(--ink);border:0;border-radius:10px;padding:10px 15px;font-weight:700;cursor:pointer}
 
 /* ── 주식 탭 ─────────────────────────── */
+.hl{margin-bottom:18px}
+.hl-note{margin:0;padding:12px 16px;font-size:12.5px;line-height:1.6;color:var(--muted);
+  border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+.hl-warn{padding:11px 16px;font-size:12.5px;font-weight:600;color:var(--amber);
+  background:color-mix(in srgb,var(--amber) 12%,transparent);
+  border-bottom:1px solid color-mix(in srgb,var(--amber) 30%,transparent)}
+.hl-table .sym{font-weight:700;font-size:14px}
+.hl-table .nm{font-size:11.5px;color:var(--dim);font-family:var(--mono)}
+.hl-table .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ok{color:var(--teal);font-weight:600;font-size:12.5px}
+.ok-dim{color:var(--dim);font-size:12.5px}
+.bad{color:var(--amber);font-weight:700;font-size:12.5px}
 .stock-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;padding-bottom:40px}
 .stock-list{list-style:none;margin:0;padding:0}
 .stock-list li{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
@@ -174,6 +188,23 @@ tbody tr:last-child td{border-bottom:0}
 .stock-list .empty{display:block;padding:28px 16px;text-align:center;color:var(--muted);font-size:13px}
 .wip{margin:0;padding:14px 16px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line);
   background:color-mix(in srgb,var(--amber) 8%,transparent)}
+/* ── 좁은 화면 ───────────────────────── */
+@media (max-width:460px){
+  /* 표가 화면보다 넓어져 페이지가 좌우로 밀리는 것을 막는다 */
+  thead th,tbody td{padding-left:9px;padding-right:9px}
+  .coin{flex-direction:column;align-items:flex-start;gap:1px}
+  .coin .nm{font-size:11px}
+  .px{font-size:13px}
+  .gx{font-size:12px}
+  .pm{font-size:13.5px}
+  thead th{font-size:11px;padding-left:9px;padding-right:9px}
+  .hl-table .sym{font-size:13px}
+  /* 오라클 칸은 좁은 화면에서 글자가 세로로 쪼개진다.
+     이상이 있을 때는 위쪽 경고 배너가 알려주므로 여기선 접는다. */
+  .hl-table th:nth-child(5),.hl-table td:nth-child(5){display:none}
+  .hero > div{padding:14px 15px}
+  .wrap{padding:0 12px}
+}
 [hidden]{display:none !important}
 footer{border-top:1px solid var(--line);padding:22px 0 46px;font-size:12.5px;color:var(--dim)}
 footer p{margin:0 0 6px}
@@ -182,6 +213,8 @@ footer p{margin:0 0 6px}
   .grid{grid-template-columns:1fr}
   .hero{grid-template-columns:1fr 1fr}
   .hero > div:first-child{grid-column:1/-1}
+  /* 칸이 3개라 2열에서 마지막이 혼자 남아 빈칸이 생긴다 */
+  .hero > div:last-child{grid-column:1/-1}
   nav.tabs{order:9;margin-left:0}
   .top-in{height:auto;flex-wrap:wrap;padding:10px 0;gap:10px}
   thead th{top:0}
@@ -309,6 +342,28 @@ footer p{margin:0 0 6px}
 
   <!-- ── 주식 뷰 ─────────────────────────── -->
   <section id="view-stock" role="tabpanel" aria-labelledby="tab-stock" hidden>
+
+    <section class="panel hl">
+      <div class="panel-head">
+        <h2>하이퍼리퀴드 주식 퍼프 괴리</h2>
+        <span class="hint" id="hlHint">불러오는 중</span>
+      </div>
+      <p class="hl-note">퍼프는 24시간 거래되므로, 한국장이 닫힌 동안의 베이시스는
+        시장이 예상하는 다음 개장가로 읽힙니다. 오라클 칸은 참조가격이 실제 KRX 시세에서
+        벗어났는지 감시한 결과입니다.</p>
+      <div class="hl-warn" id="hlWarn" hidden></div>
+      <table class="hl-table">
+        <thead>
+          <tr>
+            <th>종목</th><th>퍼프 마크가</th><th>실제 주가</th><th>베이시스</th><th>오라클</th>
+          </tr>
+        </thead>
+        <tbody id="hlBody">
+          <tr><td colspan="5" class="empty">퍼프 시세를 불러오는 중입니다.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
     <div class="stock-grid">
       <section class="panel">
         <div class="panel-head">
@@ -331,6 +386,7 @@ footer p{margin:0 0 6px}
 <footer class="wrap">
   <p>김프리즘은 업비트·빗썸 공개 시세와 바이낸스 시세, 실시간 달러/원 환율을 환산해 김치프리미엄을 계산합니다.</p>
   <p>표시된 숫자는 참고용이며 투자 판단의 근거로 쓰기 전에 거래소 앱에서 다시 확인하세요.</p>
+  <p><a href="/privacy.html">개인정보처리방침</a></p>
 </footer>
 
 <script src="realtime.js"></script>
@@ -398,10 +454,21 @@ const hhmm = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour:'2-digit', mi
 const themeBtn = document.getElementById('themeBtn');
 themeBtn.addEventListener('click', () => {
   const light = document.documentElement.dataset.theme === 'light';
-  document.documentElement.dataset.theme = light ? 'dark' : 'light';
+  const next = light ? 'dark' : 'light';
+  document.documentElement.dataset.theme = next;
   themeBtn.textContent = light ? '☾' : '☀';
   themeBtn.setAttribute('aria-label', light ? '밝은 화면으로 바꾸기' : '어두운 화면으로 바꾸기');
+  try { localStorage.setItem('kimprism.theme', next); } catch (_) {}
 });
+
+// 지난번에 고른 테마를 기억한다
+try {
+  const saved = localStorage.getItem('kimprism.theme');
+  if (saved) {
+    document.documentElement.dataset.theme = saved;
+    themeBtn.textContent = saved === 'light' ? '☀' : '☾';
+  }
+} catch (_) {}
 
 /* ════ 탭 ══════════════════════════════ */
 document.querySelectorAll('[role=tab]').forEach(tab => {
@@ -649,6 +716,10 @@ function load() {
   prev = {};
   hideNotice();
 
+  // 업비트는 웹소켓 직접 연결, 빗썸은 서버 경유라 갱신 주기가 다르다
+  document.getElementById('tableHint').textContent =
+    exchange === 'upbit' ? '거래소 직접 연결 · 실시간' : '5초마다 갱신';
+
   if (exchange === 'upbit') {
     clearInterval(bithumbTimer);
     bithumbTimer = null;
@@ -687,7 +758,9 @@ function appendMsg(m, isBot) {
   const el = document.createElement('div');
   el.className = 'msg' + (isBot ? ' bot' + (isBot === 'whale' ? ' whale' : '') : '');
   const badge = m.badge ? `<span class="badge">${m.badge}</span>` : '';
-  el.innerHTML = `<div class="meta"><span class="nick">${escapeHtml(m.nick)}</span>${badge}
+  // 태그는 서버가 IP 해시로 붙인다. 남의 닉을 베껴도 이 값이 달라 사칭이 드러난다.
+  const uid = m.tag ? `<span class="uid" title="같은 사람은 같은 표식이 붙습니다">#${escapeHtml(m.tag)}</span>` : '';
+  el.innerHTML = `<div class="meta"><span class="nick">${escapeHtml(m.nick)}</span>${uid}${badge}
     <span class="time">${hhmm(m.ts)}</span></div>
     <div class="body">${escapeHtml(m.text)}</div>`;
   log.appendChild(el);
@@ -722,6 +795,7 @@ async function send() {
   sayIn.value = '';
   const res = await KimprismChat.send(text);
   if (!res.ok) {
+    sayIn.value = text;          // 거부당하면 쓴 글을 돌려준다
     appendMsg({
       nick: '알림',
       text: res.error || '메시지를 보내지 못했습니다. 잠시 후 다시 시도해 주세요.',
@@ -785,8 +859,64 @@ async function loadStocks() {
     renderStocks(kosdaqList, document.getElementById('kosdaqHint'), []);
   }
 }
-loadStocks();
-setInterval(loadStocks, 60000);
+/* ════ 하이퍼리퀴드 주식 퍼프 괴리 ════════ */
+const usd = n => n == null ? '—' : '$' + n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+async function loadHyper() {
+  const body = document.getElementById('hlBody');
+  const hint = document.getElementById('hlHint');
+  const warn = document.getElementById('hlWarn');
+
+  try {
+    const r = await fetch(`/api/hyperliquid?t=${Date.now()}`);
+    const d = await r.json();
+    if (!d.ok || !Array.isArray(d.rows)) throw new Error(d.error || '빈 응답');
+
+    const rows = (d.korea && d.korea.length) ? d.korea : d.rows.filter(x => x.market === 'KR');
+    if (!rows.length) throw new Error('한국 종목이 상장돼 있지 않습니다');
+
+    body.innerHTML = rows.map(x => {
+      // 오라클이 실제 KRX 시세에서 벗어나면 숫자를 믿으면 안 된다
+      const oracle = x.oracleHealthy == null
+        ? '<span class="ok-dim">교차검증 없음</span>'
+        : x.oracleHealthy
+          ? '<span class="ok">정상</span>'
+          : `<span class="bad">이탈 ${x.oracleDrift.toFixed(1)}%</span>`;
+
+      return `<tr>
+        <td><div class="coin"><span class="sym">${escapeHtml(x.label)}</span>
+          <span class="nm">${escapeHtml(x.symbol)}</span></div></td>
+        <td class="num">${usd(x.markPrice)}</td>
+        <td class="num">${x.krxPrice ? Math.round(x.krxPrice).toLocaleString('ko-KR') + '원' : '—'}</td>
+        <td class="num pm ${cls(x.basis)}">${pct(x.basis)}</td>
+        <td>${oracle}</td>
+      </tr>`;
+    }).join('');
+
+    const warnings = d.warnings || [];
+    warn.hidden = !warnings.length;
+    if (warnings.length) warn.textContent = '⚠ ' + warnings.map(w => w.message).join(' · ');
+
+    hint.textContent = d.fxRate ? `환율 ${d.fxRate.toFixed(2)} 기준` : '갱신됨';
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="5" class="empty">퍼프 시세를 불러오지 못했습니다.</td></tr>';
+    hint.textContent = '연결 안 됨';
+    warn.hidden = true;
+  }
+}
+
+/* 주식 탭은 보고 있을 때만 갱신한다. 안 보는 화면에 서버를 쓰지 않는다. */
+const stockView = document.getElementById('view-stock');
+
+function refreshStockTab() {
+  if (stockView.hidden || document.visibilityState !== 'visible') return;
+  loadStocks();
+  loadHyper();
+}
+
+setInterval(refreshStockTab, 60000);
+document.getElementById('tab-stock').addEventListener('click', refreshStockTab);
+document.addEventListener('visibilitychange', refreshStockTab);
 
 /* ════ 알림봇 1 — 비트코인 급등·급락 ════════ */
 // 시뮬레이션이 아니라 실제로 받아온 가격 변화만 알린다.
