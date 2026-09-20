@@ -794,6 +794,7 @@ async function send() {
   if (!text) return;
   sayIn.value = '';
   const res = await KimprismChat.send(text);
+
   if (!res.ok) {
     sayIn.value = text;          // 거부당하면 쓴 글을 돌려준다
     appendMsg({
@@ -801,6 +802,15 @@ async function send() {
       text: res.error || '메시지를 보내지 못했습니다. 잠시 후 다시 시도해 주세요.',
       ts: Date.now(),
     }, true);
+    return;
+  }
+
+  // 내 메시지는 서버 응답을 받는 즉시 띄운다.
+  // 폴링을 기다리면 읽기 응답이 3초 캐시돼 있어 내 말이 늦게 나타난다.
+  // seen 에 넣어두므로 나중에 폴링으로 같은 메시지가 와도 중복되지 않는다.
+  if (res.message && !seen.has(res.message.id)) {
+    seen.add(res.message.id);
+    appendMsg(res.message, false);
   }
 }
 document.getElementById('sendBtn').addEventListener('click', send);
