@@ -13,7 +13,9 @@ const KimprismChat = (() => {
 
   const ENDPOINT = '/api/chat';
   const MIN_INTERVAL = 3000;    // 대화가 활발할 때
-  const MAX_INTERVAL = 15000;   // 조용할 때
+  // 너무 늘리면 조용하다가 누가 말을 걸었을 때 그 첫 마디가 한참 뒤에 뜬다.
+  // 채팅은 살아 있는 느낌이 중요해서 8초에서 끊는다.
+  const MAX_INTERVAL = 8000;    // 조용할 때
   const STEP = 2000;            // 조용할 때마다 늘리는 폭
 
   const state = {
