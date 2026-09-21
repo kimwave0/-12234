@@ -1,0 +1,145 @@
+<!-- ============================================================
+     김프리즘 푸터 배너 — SKT air 제휴
+     붙여넣는 위치: index.html 의 </footer> 바로 앞 (또는 푸터 맨 위)
+     애드센스 승인 후에는 아래 [ADSENSE SLOT] 주석 자리에 광고 단위를 넣고,
+     이 배너는 광고 위/아래에 그대로 두면 됩니다.
+     ============================================================ -->
+
+<style>
+  .kp-promo{
+    --kp-bg:#101B2B; --kp-line:#1E2C42; --kp-txt:#E7EDF6; --kp-dim:#8C9BB3;
+    --kp-red:#F2545B; --kp-org:#FFB23F; --kp-blue:#3E8BFF;
+    max-width:1200px; margin:28px auto 0; padding:0 16px; box-sizing:border-box;
+  }
+  .kp-promo__label{
+    display:flex; align-items:center; gap:8px;
+    font-size:11px; letter-spacing:.06em; color:var(--kp-dim); margin:0 0 8px 2px;
+  }
+  .kp-promo__label::after{ content:""; flex:1; height:1px; background:var(--kp-line); }
+  .kp-promo__card{
+    display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    background:linear-gradient(135deg,#131F31 0%,#0E1624 60%);
+    border:1px solid var(--kp-line); border-radius:14px;
+    padding:18px 20px; box-sizing:border-box;
+    text-decoration:none; color:var(--kp-txt);
+    transition:border-color .18s ease, transform .18s ease;
+  }
+  .kp-promo__card:hover{ border-color:#2E4058; }
+  .kp-promo__brand{
+    flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-width:84px; padding:10px 14px; border-radius:10px;
+    background:rgba(242,84,91,.10); border:1px solid rgba(242,84,91,.28);
+  }
+  .kp-promo__brand b{ font-size:18px; letter-spacing:.02em; color:var(--kp-red); }
+  .kp-promo__brand span{ font-size:10px; color:var(--kp-dim); margin-top:2px; }
+  .kp-promo__body{ flex:1 1 320px; min-width:0; }
+  .kp-promo__title{ margin:0; font-size:17px; font-weight:700; line-height:1.4; }
+  .kp-promo__title em{ font-style:normal; color:var(--kp-org); }
+  .kp-promo__sub{ margin:6px 0 0; font-size:12.5px; color:var(--kp-dim); line-height:1.6; }
+  .kp-promo__code{
+    display:inline-flex; align-items:center; gap:8px; margin-top:10px;
+    padding:6px 10px; border-radius:8px; background:#0B1320; border:1px dashed #2B3C57;
+    font-size:12.5px; color:var(--kp-dim);
+  }
+  .kp-promo__code b{ color:var(--kp-txt); letter-spacing:.12em; font-size:13.5px; }
+  .kp-promo__copy{
+    border:0; background:#1C2A3E; color:var(--kp-txt); cursor:pointer;
+    border-radius:6px; padding:3px 9px; font-size:11.5px; font-family:inherit;
+  }
+  .kp-promo__copy:hover{ background:#26374F; }
+  .kp-promo__cta{
+    flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    padding:13px 22px; border-radius:10px; white-space:nowrap;
+    background:linear-gradient(135deg,var(--kp-red),#D93F46); color:#fff;
+    font-size:14px; font-weight:700; text-decoration:none;
+  }
+  .kp-promo__cta:hover{ filter:brightness(1.08); }
+  .kp-promo__fine{
+    margin:9px 2px 0; font-size:10.5px; color:#6C7B93; line-height:1.6;
+  }
+  @media (max-width:600px){
+    .kp-promo{ margin-top:20px; }
+    .kp-promo__card{ gap:14px; padding:16px; }
+    .kp-promo__brand{ min-width:64px; padding:8px 12px; }
+    .kp-promo__brand b{ font-size:16px; }
+    .kp-promo__title{ font-size:15px; }
+    .kp-promo__cta{ width:100%; }
+  }
+</style>
+
+<section class="kp-promo" aria-label="제휴 배너">
+  <p class="kp-promo__label">제휴 광고</p>
+
+  <div class="kp-promo__card">
+    <div class="kp-promo__brand">
+      <b>air</b>
+      <span>SKT</span>
+    </div>
+
+    <div class="kp-promo__body">
+      <p class="kp-promo__title">
+        SKT 무제한 요금제, 12개월 실 체감가 <em>월 20,000원</em>
+      </p>
+      <p class="kp-promo__sub">
+        월정액 58,000원 · 보너스팩 포인트와 YouTube Premium Lite 혜택 적용 기준.
+        가입할 때 프로모션 코드를 넣으면 <b style="color:#E7EDF6">추가 60,000원 할인</b>.
+      </p>
+
+      <div class="kp-promo__code">
+        프로모션 코드 <b id="kpAirCode">SKLG34</b>
+        <button type="button" class="kp-promo__copy" onclick="kpCopyAirCode(this)">복사</button>
+      </div>
+    </div>
+
+    <!-- 링크: 사용자가 준 OneLink 주소 그대로 -->
+    <a class="kp-promo__cta"
+       href="https://sktair.onelink.me/sktair/airfriends?deep_link_value=numnum://all_menu/promotion_code?code=SKLG34"
+       target="_blank" rel="noopener sponsored">
+      코드 받고 가입하기 →
+    </a>
+    <!-- 앱에서 코드가 자동으로 안 채워지면 아래 인코딩 버전으로 교체해 보세요.
+    https://sktair.onelink.me/sktair/airfriends?deep_link_value=numnum%3A%2F%2Fall_menu%2Fpromotion_code%3Fcode%3DSKLG34
+    -->
+  </div>
+
+  <p class="kp-promo__fine">
+    * 제휴 링크이며, 가입 시 김프리즘에 소정의 보상이 지급될 수 있습니다.
+    요금·할인 조건은 SKT air 정책에 따라 변경될 수 있으니 가입 전 공식 페이지에서 확인해 주세요.
+  </p>
+
+  <!-- [ADSENSE SLOT] 애드센스 승인 후 여기에 디스플레이 광고 단위를 붙여넣으세요.
+  <div style="max-width:1200px;margin:22px auto 0;padding:0 16px;">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-9290366604364322"
+         data-ad-slot="광고단위ID"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+  -->
+</section>
+
+<script>
+  function kpCopyAirCode(btn){
+    var code = document.getElementById('kpAirCode').textContent.trim();
+    var done = function(){
+      var old = btn.textContent;
+      btn.textContent = '복사됨';
+      setTimeout(function(){ btn.textContent = old; }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(done).catch(function(){ kpFallbackCopy(code, done); });
+    } else {
+      kpFallbackCopy(code, done);
+    }
+  }
+  function kpFallbackCopy(text, cb){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.position='fixed'; ta.style.left='-9999px';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); cb(); } catch(e){}
+    document.body.removeChild(ta);
+  }
+</script>
