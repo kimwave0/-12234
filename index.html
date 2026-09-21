@@ -549,6 +549,46 @@ footer a:hover{color:var(--text)}
   }
 </script>
 <!-- ===== 배너 끝 ===== -->
+     <!-- ===== 김프 가이드 링크 ===== -->
+<style>
+  .kp-guide{max-width:1200px; margin:34px auto 0; padding:0 16px; box-sizing:border-box}
+  .kp-guide__h{font-size:15px; font-weight:700; color:#E7EDF6; margin:0 0 4px}
+  .kp-guide__s{font-size:12.5px; color:#8C9BB3; margin:0 0 14px}
+  .kp-guide__grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px}
+  .kp-guide__grid a{display:block; background:#131F31; border:1px solid #1E2C42;
+    border-radius:12px; padding:18px; text-decoration:none; color:#E7EDF6;
+    transition:border-color .18s ease}
+  .kp-guide__grid a:hover{border-color:#2E4058}
+  .kp-guide__grid b{display:block; font-size:15px; margin-bottom:5px}
+  .kp-guide__grid span{display:block; font-size:12.5px; color:#8C9BB3; line-height:1.65}
+  .kp-guide__tag{display:inline-block; font-size:10.5px; color:#3ED6C0;
+    border:1px solid rgba(62,214,192,.3); background:rgba(62,214,192,.08);
+    border-radius:5px; padding:2px 7px; margin-bottom:8px; letter-spacing:.04em}
+  @media (max-width:600px){ .kp-guide{margin-top:24px} }
+</style>
+
+<section class="kp-guide" aria-label="김프 가이드">
+  <p class="kp-guide__h">김프 가이드</p>
+  <p class="kp-guide__s">처음 보시는 분들을 위한 설명 문서입니다.</p>
+  <div class="kp-guide__grid">
+    <a href="/kimchi-premium.html">
+      <span class="kp-guide__tag">기초</span>
+      <b>김치프리미엄이란?</b>
+      <span>김프의 뜻과 계산 공식, 김프가 생기는 네 가지 이유와 해석하는 방법까지 정리했습니다.</span>
+    </a>
+    <a href="/reverse-premium.html">
+      <span class="kp-guide__tag">기초</span>
+      <b>역프리미엄(역프)이란?</b>
+      <span>국내 가격이 해외보다 싸지는 역프는 언제 왜 나타나는지, 어떤 신호로 읽어야 하는지.</span>
+    </a>
+    <a href="/kimp-trading.html">
+      <span class="kp-guide__tag">심화</span>
+      <b>김프매매의 구조와 한계</b>
+      <span>표시된 김프가 왜 그대로 수익이 되지 않는지, 비용·시간·규제 측면에서 살펴봅니다.</span>
+    </a>
+  </div>
+</section>
+<!-- ===== 김프 가이드 끝 ===== -->
 </footer>
 
 <script src="realtime.js"></script>
