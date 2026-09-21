@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+User-agent: Yeti
+Allow: /
+Disallow: /api/
+
+Sitemap: https://kimprism.com/sitemap.xml
