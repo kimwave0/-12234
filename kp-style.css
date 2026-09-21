@@ -1,0 +1,107 @@
+/* 김프리즘 설명 페이지 공통 스타일 */
+:root{
+  --bg:#0E1624; --panel:#131F31; --line:#1E2C42;
+  --txt:#E7EDF6; --dim:#8C9BB3; --faint:#6C7B93;
+  --red:#F2545B; --org:#FFB23F; --teal:#3ED6C0; --blue:#3E8BFF;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",
+    "Malgun Gothic",sans-serif;
+  line-height:1.8; -webkit-text-size-adjust:100%;
+}
+a{color:var(--blue); text-decoration:none}
+a:hover{text-decoration:underline}
+
+.kp-wrap{max-width:860px; margin:0 auto; padding:0 20px}
+
+/* 헤더 */
+.kp-top{border-bottom:1px solid var(--line); background:rgba(14,22,36,.92);
+  position:sticky; top:0; z-index:20; backdrop-filter:blur(8px)}
+.kp-top__in{max-width:860px; margin:0 auto; padding:14px 20px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px}
+.kp-logo{font-size:18px; font-weight:800; color:var(--txt); letter-spacing:-.01em}
+.kp-logo span{color:var(--teal)}
+.kp-logo:hover{text-decoration:none}
+.kp-top nav{display:flex; gap:16px; font-size:13.5px}
+.kp-top nav a{color:var(--dim)}
+.kp-top nav a:hover{color:var(--txt); text-decoration:none}
+
+/* 본문 */
+.kp-crumb{font-size:12px; color:var(--faint); margin:22px 0 0}
+.kp-crumb a{color:var(--faint)}
+h1{font-size:30px; line-height:1.4; margin:14px 0 10px; letter-spacing:-.02em}
+.kp-lead{font-size:15.5px; color:var(--dim); margin:0 0 6px}
+.kp-meta{font-size:12px; color:var(--faint); border-bottom:1px solid var(--line);
+  padding-bottom:18px; margin-bottom:8px}
+h2{font-size:21px; margin:42px 0 12px; letter-spacing:-.01em;
+  padding-left:12px; border-left:3px solid var(--teal)}
+h3{font-size:16.5px; margin:28px 0 8px; color:var(--org)}
+p{margin:0 0 14px; font-size:15.5px}
+ul,ol{margin:0 0 16px; padding-left:22px}
+li{margin-bottom:8px; font-size:15.5px}
+strong{color:#fff}
+
+/* 요소 */
+.kp-box{background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  padding:18px 20px; margin:20px 0}
+.kp-box p:last-child, .kp-box ul:last-child{margin-bottom:0}
+.kp-formula{background:#0B1320; border:1px dashed #2B3C57; border-radius:10px;
+  padding:18px 20px; margin:18px 0; text-align:center;
+  font-size:15px; line-height:2; color:var(--txt)}
+.kp-formula b{color:var(--teal)}
+.kp-note{border-left:3px solid var(--org); background:rgba(255,178,63,.06);
+  padding:14px 18px; border-radius:0 8px 8px 0; margin:20px 0; font-size:14.5px}
+.kp-warn{border-left:3px solid var(--red); background:rgba(242,84,91,.06);
+  padding:14px 18px; border-radius:0 8px 8px 0; margin:20px 0; font-size:14.5px}
+table{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px}
+th,td{padding:11px 12px; border-bottom:1px solid var(--line); text-align:left}
+th{color:var(--dim); font-weight:600; font-size:13px; background:rgba(255,255,255,.02)}
+td.num{text-align:right; font-variant-numeric:tabular-nums}
+.kp-tablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch}
+
+/* FAQ */
+.kp-faq details{border:1px solid var(--line); border-radius:10px; padding:14px 18px;
+  margin-bottom:10px; background:var(--panel)}
+.kp-faq summary{cursor:pointer; font-weight:600; font-size:15px; list-style:none}
+.kp-faq summary::-webkit-details-marker{display:none}
+.kp-faq summary::before{content:"Q "; color:var(--teal); font-weight:800}
+.kp-faq details[open] summary{margin-bottom:10px; color:var(--org)}
+.kp-faq p{font-size:14.5px; color:var(--dim); margin:0}
+
+/* CTA */
+.kp-cta{display:flex; align-items:center; justify-content:space-between; gap:18px;
+  flex-wrap:wrap; background:linear-gradient(135deg,#16243A,#0E1624);
+  border:1px solid var(--line); border-radius:14px; padding:22px; margin:36px 0}
+.kp-cta div{flex:1 1 300px; min-width:0}
+.kp-cta b{display:block; font-size:17px; margin-bottom:4px}
+.kp-cta span{font-size:13.5px; color:var(--dim)}
+.kp-cta a{flex:0 0 auto; background:linear-gradient(135deg,var(--teal),#2FB8A4);
+  color:#06201C; font-weight:800; font-size:14.5px; padding:13px 22px; border-radius:10px}
+.kp-cta a:hover{filter:brightness(1.08); text-decoration:none}
+
+/* 관련 글 */
+.kp-rel{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:12px; margin:18px 0 0}
+.kp-rel a{display:block; background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:16px 18px; color:var(--txt)}
+.kp-rel a:hover{border-color:#2E4058; text-decoration:none}
+.kp-rel b{display:block; font-size:15px; margin-bottom:4px}
+.kp-rel span{font-size:13px; color:var(--dim)}
+
+/* 푸터 */
+.kp-foot{border-top:1px solid var(--line); margin-top:56px; padding:26px 0 40px;
+  font-size:12.5px; color:var(--faint)}
+.kp-foot nav{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px}
+.kp-foot nav a{color:var(--dim)}
+.kp-foot p{font-size:12.5px; color:var(--faint); margin:0 0 6px; line-height:1.7}
+
+@media (max-width:600px){
+  h1{font-size:24px}
+  h2{font-size:19px; margin-top:34px}
+  p,li{font-size:15px}
+  .kp-cta a{width:100%; text-align:center}
+  .kp-top nav{gap:12px; font-size:12.5px}
+}
